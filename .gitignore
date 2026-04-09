@@ -1,0 +1,4 @@
+database/database.db
+backend/audio/
+venv/
+__pycache__/
