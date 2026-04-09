@@ -1,0 +1,156 @@
+/* BODY */
+body{
+margin:0;
+height:100vh;
+font-family:'Segoe UI',sans-serif;
+background: radial-gradient(circle,#0f2027,#203a43,#2c5364);
+color:white;
+overflow:hidden;
+}
+
+/* PAGES */
+.page{
+display:none;
+height:100vh;
+justify-content:center;
+align-items:center;
+flex-direction:column;
+}
+
+.page.active{
+display:flex;
+}
+
+/* BUTTON */
+button{
+background:linear-gradient(to right,#0072ff,#00c6ff);
+border:none;
+padding:12px 25px;
+border-radius:8px;
+color:white;
+cursor:pointer;
+}
+
+/* LOGIN CARD */
+.card{
+background:rgba(255,255,255,0.1);
+padding:30px;
+border-radius:15px;
+backdrop-filter: blur(10px);
+text-align:center;
+}
+
+.card input, #voiceSelect{
+display:block;
+width:250px;
+margin:10px auto;
+padding:10px;
+border:none;
+border-radius:6px;
+}
+
+/* TOP RIGHT LANGUAGE ICON */
+.top-right{
+position:absolute;
+top:20px;
+right:20px;
+}
+
+#langBtn{
+background:#1e1e1e;
+border:none;
+padding:10px;
+border-radius:50%;
+cursor:pointer;
+color:white;
+font-size:18px;
+}
+
+/* DROPDOWN */
+#language{
+position:absolute;
+top:50px;
+right:0;
+background:#1e1e1e;
+color:white;
+border-radius:8px;
+padding:10px;
+border:none;
+}
+
+.hidden{
+display:none;
+}
+
+/* CONTAINER */
+.container{
+text-align:center;
+}
+
+/* ORB */
+.orb{
+width:220px;
+height:220px;
+border-radius:50%;
+margin:auto;
+background: radial-gradient(circle,#00c6ff,#0072ff);
+box-shadow:0 0 40px #00c6ff;
+animation:pulse 2s infinite;
+cursor:pointer;
+transition:0.3s;
+}
+
+/* ORB STATES */
+.orb.listening{
+background: radial-gradient(circle,#ff416c,#ff4b2b);
+box-shadow:0 0 40px #ff4b2b;
+}
+
+.orb.processing{
+background: radial-gradient(circle,#ffd200,#f7971e);
+box-shadow:0 0 40px #f7971e;
+}
+
+.orb.speaking{
+background: radial-gradient(circle,#00f260,#0575e6);
+box-shadow:0 0 40px #00f260;
+}
+
+/* PULSE ANIMATION */
+@keyframes pulse{
+0%{transform:scale(1)}
+50%{transform:scale(1.08)}
+100%{transform:scale(1)}
+}
+
+/* STATUS LINE */
+.status-line{
+margin-top:25px;
+font-size:16px;
+letter-spacing:2px;
+padding:8px 20px;
+border-radius:20px;
+display:inline-block;
+transition:0.3s;
+}
+
+/* STATUS STATES */
+.status-line.ready{
+background:#2ecc71;
+color:black;
+}
+
+.status-line.listening{
+background:#ff4b2b;
+color:white;
+}
+
+.status-line.processing{
+background:#f1c40f;
+color:black;
+}
+
+.status-line.speaking{
+background:#3498db;
+color:white;
+}

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>AI Voice Assistant</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<!-- WELCOME -->
+<div id="welcomePage" class="page active">
+    <h1> AI Voice Assistant</h1>
+    <p>Talk in any language with AI</p>
+    <button onclick="goToLogin()">Get Started</button>
+</div>
+
+<!-- LOGIN -->
+<div id="loginPage" class="page">
+    <div class="card">
+        <h2>Login</h2>
+
+        <input id="username" placeholder="Username">
+        <input id="password" type="password" placeholder="Password">
+
+        <!--  DYNAMIC VOICE SELECT -->
+        <select id="voiceSelect">
+            <option>Loading voices...</option>
+        </select>
+
+        <button onclick="login()">Continue</button>
+        <p id="loginStatus"></p>
+    </div>
+</div>
+
+<!-- APP -->
+<div id="appPage" class="page">
+
+    <div class="top-right">
+        <button id="langBtn">🌐</button>
+
+        <select id="language" class="hidden">
+            <option value="1">English</option>
+            <option value="2">Hindi</option>
+            <option value="3">Marathi</option>
+            <option value="4">Tamil</option>
+            <option value="5">Telugu</option>
+            <option value="6">Gujarati</option>
+            <option value="7">Bengali</option>
+            <option value="8">Kannada</option>
+        </select>
+    </div>
+
+    <div class="container">
+        <div id="orb" class="orb"></div>
+
+        <div id="statusLine" class="status-line ready">
+            READY
+        </div>
+    </div>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+CREATE TABLE users (
+
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+username TEXT UNIQUE,
+password TEXT,
+created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+
+);
+
+CREATE TABLE conversations (
+
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+input_text TEXT,
+output_text TEXT,
+language TEXT,
+created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+
+);
+
