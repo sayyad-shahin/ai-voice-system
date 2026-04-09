@@ -2,12 +2,14 @@
 // GLOBAL STATE
 // =====================
 
+const API_URL = "https://ai-voice-system-j313.onrender.com"
+
 let currentPage = "welcomePage"
-let selectedVoice = "EXAVITQu4vr4xnSDxMaL"
+let selectedVoice = ""
 
 let orb, statusLine, langBtn, langDropdown
 
-// 🌐 LANGUAGE MAP (IMPORTANT)
+// LANGUAGE MAP
 const LANG_MAP = {
     "1": "en-US",
     "2": "hi-IN",
@@ -34,7 +36,7 @@ function goToLogin(){
 }
 
 // =====================
-// LOAD VOICES
+// LOAD VOICES (FIXED)
 // =====================
 
 async function loadVoices(){
@@ -42,12 +44,19 @@ async function loadVoices(){
     let select = document.getElementById("voiceSelect")
 
     try{
-        let res = await fetch("http://localhost:5000/voices")
+
+        let res = await fetch(API_URL + "/voices")
+
+        if(!res.ok) throw new Error("Server error")
+
         let data = await res.json()
 
         select.innerHTML = ""
 
-        data.voices.forEach(v=>{
+        // SUPPORT BOTH FORMATS
+        let voices = data.voices || data
+
+        voices.forEach(v=>{
             let option = document.createElement("option")
             option.value = v.id
             option.textContent = v.name
@@ -57,12 +66,13 @@ async function loadVoices(){
         selectedVoice = select.value
 
     }catch(e){
-        select.innerHTML = "<option>Error loading voices</option>"
+        console.log(e)
+        select.innerHTML = "<option>No voices available</option>"
     }
 }
 
 // =====================
-// LOGIN
+// LOGIN (FIXED)
 // =====================
 
 async function login(){
@@ -80,11 +90,15 @@ async function login(){
 
     try{
 
-        let res = await fetch("http://localhost:5000/auth",{
+        status.innerText = "Connecting to server..."
+
+        let res = await fetch(API_URL + "/auth",{
             method:"POST",
             headers:{"Content-Type":"application/json"},
             body:JSON.stringify({username,password})
         })
+
+        if(!res.ok) throw new Error("Server down")
 
         let data = await res.json()
 
@@ -95,8 +109,9 @@ async function login(){
             status.innerText = "Login Failed"
         }
 
-    }catch{
-        status.innerText = "Server error"
+    }catch(e){
+        console.log(e)
+        status.innerText = "Server waking up... try again"
     }
 }
 
@@ -117,7 +132,6 @@ window.onload = function(){
         langDropdown.classList.toggle("hidden")
     }
 
-    // 🔥 CHANGE RECOGNITION LANGUAGE DYNAMICALLY
     langDropdown.onchange = ()=>{
         if(recognition){
             let selectedLang = langDropdown.value
@@ -172,11 +186,11 @@ if("webkitSpeechRecognition" in window){
     }
 
 }else{
-    alert("Speech recognition not supported")
+    alert("Speech recognition not supported on this device")
 }
 
 // =====================
-// SEND VOICE
+// SEND VOICE (FIXED)
 // =====================
 
 async function sendVoice(text){
@@ -185,7 +199,7 @@ async function sendVoice(text){
 
     try{
 
-        let res = await fetch("http://localhost:5000/voice",{
+        let res = await fetch(API_URL + "/voice",{
             method:"POST",
             headers:{"Content-Type":"application/json"},
             body:JSON.stringify({
@@ -195,18 +209,23 @@ async function sendVoice(text){
             })
         })
 
+        if(!res.ok) throw new Error("Voice API error")
+
         let data = await res.json()
 
         setTimeout(()=>{
 
             setState("speaking")
 
-            let audio = new Audio(data.audio)
-            audio.play()
+            if(data.audio){
+                let audio = new Audio(data.audio)
+                audio.play()
+                audio.onended = ()=> setState("ready")
+            }else{
+                setState("ready")
+            }
 
-            audio.onended = ()=> setState("ready")
-
-        }, 800)
+        }, 600)
 
     }catch(e){
         console.log(e)
