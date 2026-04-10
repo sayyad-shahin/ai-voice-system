@@ -6,15 +6,16 @@ auth_routes = Blueprint("auth", __name__)
 @auth_routes.route("/auth", methods=["POST"])
 def auth():
     try:
-        data = request.json
+        data = request.get_json()
 
-        # DEBUG (helps you see request in terminal)
         print("Incoming Data:", data)
 
         username = data.get("username")
         password = data.get("password")
 
-        # Validation
+        # =============================
+        # VALIDATION
+        # =============================
         if not username or not password:
             return jsonify({
                 "success": False,
@@ -24,17 +25,23 @@ def auth():
         db = get_db()
         cur = db.cursor()
 
-        # Check if user exists
+        # =============================
+        # CHECK USER
+        # =============================
         user = cur.execute(
-            "SELECT * FROM users WHERE username=?",
+            "SELECT username, password FROM users WHERE username=?",
             (username,)
         ).fetchone()
 
         print("User Found:", user)
 
+        # =============================
         # LOGIN CASE
+        # =============================
         if user:
-            if user["password"] == password:
+            db_password = user[1]  # 👈 FIX (important)
+
+            if db_password == password:
                 return jsonify({
                     "success": True,
                     "login": True,
@@ -46,7 +53,9 @@ def auth():
                     "error": "Wrong password"
                 })
 
-        # REGISTER CASE
+        # =============================
+        # REGISTER CASE (AUTO CREATE USER)
+        # =============================
         cur.execute(
             "INSERT INTO users(username, password) VALUES (?, ?)",
             (username, password)
@@ -64,4 +73,4 @@ def auth():
         return jsonify({
             "success": False,
             "error": "Server error"
-        })
+        }), 500
