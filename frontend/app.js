@@ -67,7 +67,7 @@ async function loadVoices(){
     let select = document.getElementById("voiceSelect")
 
     try{
-        await wakeServer()  // 👈 VERY IMPORTANT
+        await wakeServer()  //  VERY IMPORTANT
 
         let res = await fetch(`${BASE_URL}/voices`)
 
@@ -126,7 +126,7 @@ async function login(){
             status.innerText = "Login Successful"
             setTimeout(()=>switchPage("appPage"),800)
         }else{
-            status.innerText = "Login Failed"
+            status.innerText = data.error || "Login Failed"
         }
 
     }catch(e){

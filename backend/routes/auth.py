@@ -13,9 +13,6 @@ def auth():
         username = data.get("username")
         password = data.get("password")
 
-        # =============================
-        # VALIDATION
-        # =============================
         if not username or not password:
             return jsonify({
                 "success": False,
@@ -25,9 +22,17 @@ def auth():
         db = get_db()
         cur = db.cursor()
 
-        # =============================
-        # CHECK USER
-        # =============================
+        #  CREATE TABLE (VERY IMPORTANT)
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE,
+            password TEXT
+        )
+        """)
+        db.commit()
+
+        #  CHECK USER
         user = cur.execute(
             "SELECT username, password FROM users WHERE username=?",
             (username,)
@@ -35,16 +40,11 @@ def auth():
 
         print("User Found:", user)
 
-        # =============================
-        # LOGIN CASE
-        # =============================
+        #  LOGIN
         if user:
-            db_password = user[1]  # 👈 FIX (important)
-
-            if db_password == password:
+            if user[1] == password:
                 return jsonify({
                     "success": True,
-                    "login": True,
                     "message": "Login successful"
                 })
             else:
@@ -53,9 +53,7 @@ def auth():
                     "error": "Wrong password"
                 })
 
-        # =============================
-        # REGISTER CASE (AUTO CREATE USER)
-        # =============================
+        #  REGISTER (AUTO)
         cur.execute(
             "INSERT INTO users(username, password) VALUES (?, ?)",
             (username, password)
@@ -64,13 +62,12 @@ def auth():
 
         return jsonify({
             "success": True,
-            "registered": True,
-            "message": "User registered successfully"
+            "message": "User registered"
         })
 
     except Exception as e:
         print("Auth Error:", e)
         return jsonify({
             "success": False,
-            "error": "Server error"
+            "error": str(e)  # 👈 shows real error
         }), 500
