@@ -1,4 +1,7 @@
-database/database.db
-backend/audio/
-venv/
-__pycache__/
+ 
+__pycache__/ 
+*.pyc 
+*.pyo 
+.env 
+audio/ 
+database/ 
