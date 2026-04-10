@@ -4,3 +4,4 @@ deep-translator
 langdetect
 requests
 gunicorn
+python-dotenv
