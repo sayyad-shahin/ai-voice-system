@@ -1,13 +1,13 @@
+const BASE_URL = "https://ai-voice-system-j313.onrender.com"
+
 // =====================
 // GLOBAL STATE
 // =====================
-
 let currentPage = "welcomePage"
 let selectedVoice = "EXAVITQu4vr4xnSDxMaL"
 
 let orb, statusLine, langBtn, langDropdown
 
-// 🌐 LANGUAGE MAP (IMPORTANT)
 const LANG_MAP = {
     "1": "en-US",
     "2": "hi-IN",
@@ -20,29 +20,14 @@ const LANG_MAP = {
 }
 
 // =====================
-// PAGE NAVIGATION
-// =====================
-
-function switchPage(next){
-    document.getElementById(currentPage).classList.remove("active")
-    document.getElementById(next).classList.add("active")
-    currentPage = next
-}
-
-function goToLogin(){
-    switchPage("loginPage")
-}
-
-// =====================
 // LOAD VOICES
 // =====================
-
 async function loadVoices(){
 
     let select = document.getElementById("voiceSelect")
 
     try{
-        let res = await fetch("http://localhost:5000/voices")
+        let res = await fetch(`${BASE_URL}/voices`)
         let data = await res.json()
 
         select.innerHTML = ""
@@ -57,6 +42,7 @@ async function loadVoices(){
         selectedVoice = select.value
 
     }catch(e){
+        console.log(e)
         select.innerHTML = "<option>Error loading voices</option>"
     }
 }
@@ -64,7 +50,6 @@ async function loadVoices(){
 // =====================
 // LOGIN
 // =====================
-
 async function login(){
 
     let username = document.getElementById("username").value
@@ -73,14 +58,8 @@ async function login(){
 
     let status = document.getElementById("loginStatus")
 
-    if(!username || !password){
-        status.innerText = "Enter credentials"
-        return
-    }
-
     try{
-
-        let res = await fetch("http://localhost:5000/auth",{
+        let res = await fetch(`${BASE_URL}/auth`,{
             method:"POST",
             headers:{"Content-Type":"application/json"},
             body:JSON.stringify({username,password})
@@ -101,91 +80,14 @@ async function login(){
 }
 
 // =====================
-// INIT
-// =====================
-
-window.onload = function(){
-
-    loadVoices()
-
-    orb = document.getElementById("orb")
-    statusLine = document.getElementById("statusLine")
-    langBtn = document.getElementById("langBtn")
-    langDropdown = document.getElementById("language")
-
-    langBtn.onclick = ()=>{
-        langDropdown.classList.toggle("hidden")
-    }
-
-    // 🔥 CHANGE RECOGNITION LANGUAGE DYNAMICALLY
-    langDropdown.onchange = ()=>{
-        if(recognition){
-            let selectedLang = langDropdown.value
-            recognition.lang = LANG_MAP[selectedLang] || "en-US"
-        }
-    }
-
-    orb.onclick = ()=>{
-        if(recognition){
-            recognition.start()
-        }
-    }
-}
-
-// =====================
-// STATE CONTROL
-// =====================
-
-function setState(state){
-
-    orb.className = "orb " + state
-    statusLine.className = "status-line " + state
-
-    if(state==="listening") statusLine.innerText="LISTENING..."
-    else if(state==="processing") statusLine.innerText="PROCESSING..."
-    else if(state==="speaking") statusLine.innerText="SPEAKING..."
-    else statusLine.innerText="READY"
-}
-
-// =====================
-// SPEECH RECOGNITION
-// =====================
-
-let recognition
-
-if("webkitSpeechRecognition" in window){
-
-    recognition = new webkitSpeechRecognition()
-
-    recognition.lang = "en-US"
-    recognition.continuous = false
-    recognition.interimResults = false
-
-    recognition.onstart = ()=> setState("listening")
-
-    recognition.onend = ()=> setState("processing")
-
-    recognition.onresult = (e)=>{
-        let text = e.results[0][0].transcript
-        console.log("User:", text)
-        sendVoice(text)
-    }
-
-}else{
-    alert("Speech recognition not supported")
-}
-
-// =====================
 // SEND VOICE
 // =====================
-
 async function sendVoice(text){
 
     let lang = document.getElementById("language").value
 
     try{
-
-        let res = await fetch("http://localhost:5000/voice",{
+        let res = await fetch(`${BASE_URL}/voice`,{
             method:"POST",
             headers:{"Content-Type":"application/json"},
             body:JSON.stringify({
@@ -197,16 +99,17 @@ async function sendVoice(text){
 
         let data = await res.json()
 
+        if(!data.audio){
+            setState("ready")
+            return
+        }
+
         setTimeout(()=>{
-
             setState("speaking")
-
             let audio = new Audio(data.audio)
             audio.play()
-
             audio.onended = ()=> setState("ready")
-
-        }, 800)
+        },800)
 
     }catch(e){
         console.log(e)

@@ -31,4 +31,4 @@ CREATE TABLE IF NOT EXISTS conversations (
 conn.commit()
 conn.close()
 
-print("✅ Database created successfully!")
+print(" Database created successfully!")
