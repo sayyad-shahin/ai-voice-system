@@ -3,12 +3,12 @@ from config import get_db
 
 auth_routes = Blueprint("auth", __name__)
 
+
 @auth_routes.route("/auth", methods=["POST"])
 def auth():
     try:
-        data = request.get_json()
 
-        print("Incoming Data:", data)
+        data = request.get_json()
 
         username = data.get("username")
         password = data.get("password")
@@ -22,7 +22,6 @@ def auth():
         db = get_db()
         cur = db.cursor()
 
-        #  CREATE TABLE (VERY IMPORTANT)
         cur.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -30,34 +29,33 @@ def auth():
             password TEXT
         )
         """)
+
         db.commit()
 
-        #  CHECK USER
         user = cur.execute(
             "SELECT username, password FROM users WHERE username=?",
             (username,)
         ).fetchone()
 
-        print("User Found:", user)
-
-        #  LOGIN
         if user:
-            if user[1] == password:
+
+            if user["password"] == password:
                 return jsonify({
                     "success": True,
                     "message": "Login successful"
                 })
+
             else:
                 return jsonify({
                     "success": False,
                     "error": "Wrong password"
                 })
 
-        #  REGISTER (AUTO)
         cur.execute(
-            "INSERT INTO users(username, password) VALUES (?, ?)",
+            "INSERT INTO users(username,password) VALUES (?,?)",
             (username, password)
         )
+
         db.commit()
 
         return jsonify({
@@ -66,8 +64,7 @@ def auth():
         })
 
     except Exception as e:
-        print("Auth Error:", e)
         return jsonify({
             "success": False,
-            "error": str(e)  # 👈 shows real error
+            "error": str(e)
         }), 500

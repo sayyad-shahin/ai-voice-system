@@ -7,7 +7,8 @@ DB_PATH = os.path.abspath(
     os.path.join(BASE_DIR, "..", "database", "database.db")
 )
 
-print("DB PATH:", DB_PATH)  # 👈 ADD THIS
+os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)

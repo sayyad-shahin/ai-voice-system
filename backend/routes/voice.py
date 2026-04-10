@@ -4,7 +4,7 @@ from services.ai_engine import improve
 from services.tts import speak, get_voices
 from config import get_db
 import datetime
-import time  # 
+import time
 
 voice_routes = Blueprint("voice", __name__)
 
@@ -19,13 +19,19 @@ LANGUAGES = {
     "8": "kn"
 }
 
-# =============================
-#  VOICE API (WITH DELAY)
-# =============================
+
 @voice_routes.route("/voice", methods=["POST"])
 def voice():
+
     try:
-        data = request.json
+
+        data = request.get_json()
+
+        if not data:
+            return jsonify({
+                "success": False,
+                "error": "Invalid request"
+            }), 400
 
         text = data.get("text", "").strip()
         lang_option = str(data.get("language", "1"))
@@ -37,35 +43,53 @@ def voice():
                 "error": "Empty input"
             }), 400
 
+        print("User Input:", text)
+
         target_lang = LANGUAGES.get(lang_option, "en")
+        print("Target Language:", target_lang)
 
-        print("Input:", text)
-
-        #  Translate (AUTO DETECT → SELECTED LANGUAGE)
         translated = translate(text, target_lang)
+        print("Translated:", translated)
 
-        #  Improve (AFTER translation)
         improved = improve(translated)
+        print("Improved:", improved)
 
-        time.sleep(1.0)  # Response build delay
+        time.sleep(0.5)
 
-        #  TTS
         audio_url = speak(improved, voice_id)
 
-        # Save to DB
+        print("Audio URL:", audio_url)
+
+        if not audio_url:
+            return jsonify({
+                "success": False,
+                "error": "TTS generation failed"
+            }), 500
+
         try:
+
             db = get_db()
             cur = db.cursor()
 
+            cur.execute("""
+            CREATE TABLE IF NOT EXISTS conversations(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                input_text TEXT,
+                output_text TEXT,
+                language TEXT,
+                created_at TEXT
+            )
+            """)
+
             cur.execute(
-                "INSERT INTO conversations(input_text, output_text, language, created_at) VALUES (?,?,?,?)",
+                "INSERT INTO conversations(input_text,output_text,language,created_at) VALUES (?,?,?,?)",
                 (text, improved, target_lang, str(datetime.datetime.now()))
             )
 
             db.commit()
 
-        except Exception as e:
-            print("DB Error:", e)
+        except Exception as db_error:
+            print("Database Error:", db_error)
 
         return jsonify({
             "success": True,
@@ -74,6 +98,7 @@ def voice():
         })
 
     except Exception as e:
+
         print("Voice API Error:", e)
 
         return jsonify({
@@ -82,12 +107,23 @@ def voice():
         }), 500
 
 
-# =============================
-#  VOICES API
-# =============================
 @voice_routes.route("/voices", methods=["GET"])
 def voices():
-    return jsonify({
-        "success": True,
-        "voices": get_voices()
-    })
+
+    try:
+
+        voices_list = get_voices()
+
+        return jsonify({
+            "success": True,
+            "voices": voices_list
+        })
+
+    except Exception as e:
+
+        print("Voice Fetch Error:", e)
+
+        return jsonify({
+            "success": False,
+            "voices": []
+        })
