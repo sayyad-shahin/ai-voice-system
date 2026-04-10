@@ -18,7 +18,7 @@ const LANG_MAP = {
 }
 
 // =====================
-// PAGE SWITCHING (FIXED)
+// PAGE SWITCHING
 // =====================
 function switchPage(pageId){
     document.querySelectorAll(".page").forEach(p => p.style.display = "none")
@@ -49,25 +49,25 @@ function setState(state){
 }
 
 // =====================
-// WAKE RENDER SERVER (IMPORTANT)
+// WAKE RENDER SERVER
 // =====================
 async function wakeServer(){
     try{
         await fetch(BASE_URL)
     }catch(e){
-        console.log("Wake failed (normal on first try)")
+        console.log("Wake failed (normal)")
     }
 }
 
 // =====================
-// LOAD VOICES (FIXED)
+// LOAD VOICES
 // =====================
 async function loadVoices(){
 
     let select = document.getElementById("voiceSelect")
 
     try{
-        await wakeServer()  //  VERY IMPORTANT
+        await wakeServer()
 
         let res = await fetch(`${BASE_URL}/voices`)
 
@@ -101,15 +101,19 @@ async function loadVoices(){
 }
 
 // =====================
-// LOGIN
+// LOGIN (FULL FIX)
 // =====================
 async function login(){
 
-    let username = document.getElementById("username").value
-    let password = document.getElementById("password").value
-    selectedVoice = document.getElementById("voiceSelect").value
+    let username = document.getElementById("username").value.trim()
+    let password = document.getElementById("password").value.trim()
 
     let status = document.getElementById("loginStatus")
+
+    if(!username || !password){
+        status.innerText = "Enter username & password"
+        return
+    }
 
     try{
         await wakeServer()
@@ -120,32 +124,43 @@ async function login(){
             body:JSON.stringify({username,password})
         })
 
+        // 🔥 CHECK RESPONSE
+        if(!res.ok){
+            throw new Error("Server not reachable")
+        }
+
         let data = await res.json()
+        console.log("LOGIN RESPONSE:", data)
 
         if(data.success){
-            status.innerText = "Login Successful"
+            status.innerText = "Login Successful "
             setTimeout(()=>switchPage("appPage"),800)
         }else{
-            status.innerText = data.error || "Login Failed"
+            status.innerText = data.error || "Login Failed ❌"
         }
 
     }catch(e){
-        console.log(e)
+        console.log("LOGIN ERROR:", e)
         status.innerText = "Server error"
     }
 }
 
 // =====================
-// SEND VOICE (FULL FIX)
+// SEND VOICE
 // =====================
 async function sendVoice(text){
 
     let lang = document.getElementById("language").value
 
+    if(!text){
+        console.log("Empty text")
+        return
+    }
+
     try{
         setState("listening")
 
-        await wakeServer()  // 👈 FIX RENDER DELAY
+        await wakeServer()
 
         let res = await fetch(`${BASE_URL}/voice`,{
             method:"POST",
@@ -156,6 +171,10 @@ async function sendVoice(text){
                 voice: selectedVoice
             })
         })
+
+        if(!res.ok){
+            throw new Error("Voice API failed")
+        }
 
         let data = await res.json()
         console.log("VOICE RESPONSE:", data)
@@ -177,7 +196,6 @@ async function sendVoice(text){
 
             let audio = new Audio()
 
-            // FIX: handle full URL or relative path
             audio.src = data.audio.startsWith("http")
                 ? data.audio
                 : `${BASE_URL}${data.audio}`
@@ -187,9 +205,7 @@ async function sendVoice(text){
                 setState("ready")
             })
 
-            audio.onended = ()=>{
-                setState("ready")
-            }
+            audio.onended = ()=> setState("ready")
 
         },800)
 
@@ -200,7 +216,7 @@ async function sendVoice(text){
 }
 
 // =====================
-// AUTO LOAD VOICES ON START
+// AUTO LOAD
 // =====================
 window.onload = ()=>{
     loadVoices()
