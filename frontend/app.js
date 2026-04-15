@@ -22,12 +22,17 @@ let select = document.getElementById("voiceSelect")
 
 try{
 
-let res = await fetch(API + "/voices")
-let data = await res.json()
+// STEP 1: show loading immediately
+select.innerHTML = "<option>Loading voices...</option>"
+
+// STEP 2: check cache first
+let cached = localStorage.getItem("voices")
+
+if(cached){
+
+let data = JSON.parse(cached)
 
 select.innerHTML = ""
-
-if(data.success && data.voices){
 
 data.voices.forEach(v=>{
 let option = document.createElement("option")
@@ -38,9 +43,28 @@ select.appendChild(option)
 
 selectedVoice = select.value
 
-}else{
+}
 
-select.innerHTML = "<option>No voices available</option>"
+// STEP 3: fetch fresh voices in background
+let res = await fetch(API + "/voices")
+let data = await res.json()
+
+if(data.success && data.voices){
+
+// update dropdown
+select.innerHTML = ""
+
+data.voices.forEach(v=>{
+let option = document.createElement("option")
+option.value = v.id
+option.textContent = v.name
+select.appendChild(option)
+})
+
+selectedVoice = select.value
+
+// update cache
+localStorage.setItem("voices", JSON.stringify(data))
 
 }
 
@@ -99,9 +123,10 @@ status.innerText = "Server error"
 
 }
 
-window.onload = function(){
-
+function goToLogin(){
+switchPage("loginPage")
 loadVoices()
+
 
 orb = document.getElementById("orb")
 statusLine = document.getElementById("statusLine")
@@ -226,7 +251,6 @@ return
 
 }
 
-setTimeout(()=>{
 
 setState("speaking")
 
@@ -251,7 +275,6 @@ console.log("Audio failed")
 setState("ready")
 }
 
-},500)
 
 }catch(e){
 
