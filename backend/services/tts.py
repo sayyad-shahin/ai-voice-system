@@ -15,10 +15,7 @@ AUDIO_FOLDER = os.path.abspath(
 
 os.makedirs(AUDIO_FOLDER, exist_ok=True)
 
-BACKEND_URL = os.getenv(
-    "BACKEND_URL",
-    "https://ai-voice-system-j313.onrender.com"
-)
+BACKEND_URL = os.getenv("BACKEND_URL", "")
 
 VOICE_CACHE = None
 
@@ -63,7 +60,7 @@ def speak(text, voice_id):
         with open(filepath, "wb") as f:
             f.write(r.content)
 
-        audio_url = f"{BACKEND_URL}/audio/{filename}"
+        audio_url = f"/audio/{filename}"
 
         print("Audio Generated:", audio_url)
 
