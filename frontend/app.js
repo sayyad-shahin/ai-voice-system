@@ -13,7 +13,11 @@ currentPage = next
 }
 
 function goToLogin(){
+
 switchPage("loginPage")
+
+loadVoices()
+
 }
 
 async function loadVoices(){
