@@ -5,7 +5,7 @@ import os
 API_KEY = os.getenv("ELEVENLABS_API_KEY")
 
 if not API_KEY:
-    print("ERROR: ELEVENLABS_API_KEY not set")
+    raise Exception("ELEVENLABS_API_KEY missing in environment variables")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
