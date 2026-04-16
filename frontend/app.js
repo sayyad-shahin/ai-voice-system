@@ -238,6 +238,8 @@ async function sendVoice(text){
 
             }
 
+            console.log("Audio URL:", data.audio)
+
             let audio = new Audio(data.audio)
 
             audio.play()

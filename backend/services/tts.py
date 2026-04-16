@@ -35,7 +35,7 @@ def speak(text, voice_id):
         }
 
         r = requests.post(url, json=payload, headers=headers, timeout=30)
-        
+
         print("STATUS:", r.status_code)
         print("RESPONSE:", r.text)
 
@@ -55,8 +55,19 @@ def speak(text, voice_id):
         filename = str(uuid.uuid4()) + ".mp3"
         filepath = os.path.join(AUDIO_FOLDER, filename)
 
-        with open(filepath, "wb") as f:
-            f.write(r.content)
+        # Validate response before saving
+
+        if r.status_code == 200 and "audio" in r.headers.get("Content-Type", ""):
+            with open(filepath, "wb") as f:
+                f.write(r.content)
+
+        else:
+            print("Invalid audio response from ElevenLabs")
+            print("Status:", r.status_code)
+            print("Headers:", r.headers)
+            print("Response:", r.text)
+
+            return ""
 
         audio_url = f"{BACKEND_URL}/audio/{filename}"
 
