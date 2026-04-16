@@ -54,8 +54,6 @@ def voice():
         improved = improve(translated)
         print("Improved:", improved)
 
-        time.sleep(0.5)
-
         audio_url = speak(improved, voice_id)
 
         print("Audio URL:", audio_url)
