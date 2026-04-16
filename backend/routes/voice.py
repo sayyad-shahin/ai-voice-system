@@ -58,11 +58,10 @@ def voice():
 
         print("Audio URL:", audio_url)
 
-        if not audio_url:
-            return jsonify({
-                "success": False,
-                "error": "Voice generation failed - check API key or quota"
-             }), 500
+        if not audio_url:return jsonify({
+        "success": False,
+        "error": "Voice generation failed - check API key or quota"
+    }), 500
 
         try:
 

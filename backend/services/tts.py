@@ -44,7 +44,7 @@ def speak(text, voice_id):
 
         payload = {
             "text": text,
-            "model_id": "eleven_monolingual_v1"
+            "model_id": "eleven_multilingual_v2"
         }
 
         #  CALL API
