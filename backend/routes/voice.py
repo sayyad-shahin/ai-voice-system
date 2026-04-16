@@ -61,7 +61,7 @@ def voice():
         if not audio_url:
             print("TTS failed, using fallback audio")
 
-            audio_url = "https://www.soundjay.com/buttons/sounds/button-16.mp3"
+            audio_url = f"{request.host_url}audio/fallback.mp3"
 
         try:
 
