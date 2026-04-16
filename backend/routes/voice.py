@@ -51,10 +51,10 @@ def voice():
         translated = translate(text, target_lang)
         print("Translated:", translated)
 
-        final_text = translated
-        print("Final Text:", final_text)
+        improved = improve(translated)
+        print("Improved:", improved)
 
-        audio_url = speak(final_text, voice_id)
+        audio_url = speak(improved, voice_id)
 
         print("Audio URL:", audio_url)
 
@@ -62,7 +62,7 @@ def voice():
             return jsonify({
                 "success": False,
                 "error": "Voice generation failed - check API key or quota"
-            }), 500
+             }), 500
 
         try:
 
