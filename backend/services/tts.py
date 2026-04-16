@@ -9,7 +9,7 @@ import os
 API_KEY = os.getenv("ELEVENLABS_API_KEY")
 
 if not API_KEY:
-    print("❌ ERROR: ELEVENLABS_API_KEY not set")
+    print(" ERROR: ELEVENLABS_API_KEY not set")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 AUDIO_FOLDER = os.path.join(BASE_DIR, "..", "audio")
@@ -31,7 +31,7 @@ def speak(text, voice_id):
         if not API_KEY:
             raise Exception("Missing ELEVENLABS_API_KEY")
 
-        # ✅ Use selected voice OR default safe voice
+        #  Use selected voice OR default safe voice
         if not voice_id:
             voice_id = "EXAVITQu4vr4xnSDxMaL"
 
@@ -44,36 +44,36 @@ def speak(text, voice_id):
 
         payload = {
             "text": text,
-            "model_id": "eleven_multilingual_v2"
+            "model_id": "eleven_monolingual_v1"
         }
 
-        # 🔥 CALL API
+        #  CALL API
         r = requests.post(url, json=payload, headers=headers, timeout=30)
 
-        # 🔍 DEBUG LOGS (IMPORTANT)
+        #  DEBUG LOGS (IMPORTANT)
         print("STATUS:", r.status_code)
         print("RESPONSE:", r.text)
 
-        # ❌ STRICT: must succeed
+        #  STRICT: must succeed
         if r.status_code != 200:
             raise Exception(f"TTS FAILED: {r.text}")
 
-        # ✅ SAVE AUDIO
+        #  SAVE AUDIO
         filename = str(uuid.uuid4()) + ".mp3"
         filepath = os.path.join(AUDIO_FOLDER, filename)
 
         with open(filepath, "wb") as f:
             f.write(r.content)
 
-        # ✅ RETURN AUDIO URL
+        #  RETURN AUDIO URL
         audio_url = f"{BACKEND_URL}/audio/{filename}"
 
-        print("✅ Audio Generated:", audio_url)
+        print(" Audio Generated:", audio_url)
 
         return audio_url
 
     except Exception as e:
-        print("❌ TTS ERROR:", str(e))
+        print(" TTS ERROR:", str(e))
         return None
 
 
@@ -109,7 +109,7 @@ def get_voices():
     except Exception as e:
         print("Voice Fetch Error:", str(e))
 
-    # ✅ fallback list (UI only)
+    #  fallback list (UI only)
     return [
         {"id": "EXAVITQu4vr4xnSDxMaL", "name": "Rachel"},
         {"id": "21m00Tcm4TlvDq8ikWAM", "name": "Bella"},

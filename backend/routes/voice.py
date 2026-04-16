@@ -51,10 +51,10 @@ def voice():
         translated = translate(text, target_lang)
         print("Translated:", translated)
 
-        improved = improve(translated)
-        print("Improved:", improved)
+        final_text = translated
+        print("Final Text:", final_text)
 
-        audio_url = speak(improved, voice_id)
+        audio_url = speak(final_text, voice_id)
 
         print("Audio URL:", audio_url)
 
