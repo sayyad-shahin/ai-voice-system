@@ -54,14 +54,17 @@ def voice():
         improved = improve(translated)
         print("Improved:", improved)
 
+        time.sleep(0.5)
+
         audio_url = speak(improved, voice_id)
 
         print("Audio URL:", audio_url)
 
-        if not audio_url:return jsonify({
-        "success": False,
-        "error": "Voice generation failed - check API key or quota"
-    }), 500
+        if not audio_url:
+            return jsonify({
+                "success": False,
+                "error": "TTS generation failed"
+            }), 500
 
         try:
 
