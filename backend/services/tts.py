@@ -35,6 +35,9 @@ def speak(text, voice_id):
         }
 
         r = requests.post(url, json=payload, headers=headers, timeout=30)
+        
+        print("STATUS:", r.status_code)
+        print("RESPONSE:", r.text)
 
         if r.status_code != 200:
 

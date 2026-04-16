@@ -61,10 +61,9 @@ def voice():
         print("Audio URL:", audio_url)
 
         if not audio_url:
-            return jsonify({
-                "success": False,
-                "error": "TTS generation failed"
-            }), 500
+            print("TTS failed, using fallback audio")
+
+            audio_url = "https://www.soundjay.com/buttons/sounds/button-16.mp3"
 
         try:
 
