@@ -1,7 +1,13 @@
- 
-__pycache__/ 
-*.pyc 
-*.pyo 
-.env 
-audio/ 
-database/ 
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# Ignore all audio files
+backend/audio/*
+
+# BUT allow fallback file
+!backend/audio/fallback.mp3
+
+# Other folders
+database/
