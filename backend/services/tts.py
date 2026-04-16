@@ -5,19 +5,17 @@ import os
 API_KEY = os.getenv("ELEVENLABS_API_KEY")
 
 if not API_KEY:
-    raise Exception("ELEVENLABS_API_KEY missing in environment variables")
+    print("ERROR: ELEVENLABS_API_KEY not set")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-AUDIO_FOLDER = os.path.abspath(
-    os.path.join(BASE_DIR, "..", "audio")
-)
+AUDIO_FOLDER = os.path.join(BASE_DIR, "..", "audio")
 
 os.makedirs(AUDIO_FOLDER, exist_ok=True)
 
-BACKEND_URL = os.getenv("BACKEND_URL", "")
-
-VOICE_CACHE = None
+BACKEND_URL = os.getenv(
+    "BACKEND_URL",
+    "https://ai-voice-system-j313.onrender.com"
+)
 
 
 def speak(text, voice_id):
@@ -36,49 +34,39 @@ def speak(text, voice_id):
             "model_id": "eleven_multilingual_v2"
         }
 
-        r = requests.post(url, json=payload, headers=headers, timeout=15)
+        r = requests.post(url, json=payload, headers=headers, timeout=30)
 
         if r.status_code != 200:
 
-            print("Primary voice failed. Trying fallback")
+            print("Voice failed. Trying fallback voice...")
 
-            fallback = "EXAVITQu4vr4xnSDxMaL"
+            fallback_voice = "EXAVITQu4vr4xnSDxMaL"
 
-            url = f"https://api.elevenlabs.io/v1/text-to-speech/{fallback}"
-
-            r = requests.post(url, json=payload, headers=headers, timeout=15)
+            url = f"https://api.elevenlabs.io/v1/text-to-speech/{fallback_voice}"
+            r = requests.post(url, json=payload, headers=headers, timeout=30)
 
         if r.status_code != 200:
-
             print("TTS API Error:", r.text)
-            return None
+            return ""
 
         filename = str(uuid.uuid4()) + ".mp3"
-
         filepath = os.path.join(AUDIO_FOLDER, filename)
 
         with open(filepath, "wb") as f:
             f.write(r.content)
 
-        audio_url = f"/audio/{filename}"
+        audio_url = f"{BACKEND_URL}/audio/{filename}"
 
         print("Audio Generated:", audio_url)
 
         return audio_url
 
     except Exception as e:
-
-        print("TTS Error:", e)
-
-        return None
+        print("TTS Error:", str(e))
+        return ""
 
 
 def get_voices():
-
-    global VOICE_CACHE
-
-    if VOICE_CACHE:
-        return VOICE_CACHE
 
     try:
 
@@ -88,7 +76,7 @@ def get_voices():
             "xi-api-key": API_KEY
         }
 
-        r = requests.get(url, headers=headers, timeout=10)
+        r = requests.get(url, headers=headers, timeout=20)
 
         if r.status_code == 200:
 
@@ -97,27 +85,24 @@ def get_voices():
             voices = []
 
             for v in data.get("voices", []):
-
                 voices.append({
-                    "id": v["voice_id"],
-                    "name": v["name"]
+                    "id": v.get("voice_id"),
+                    "name": v.get("name")
                 })
 
-            VOICE_CACHE = voices
-
-            return voices
+            if voices:
+                return voices
 
     except Exception as e:
+        print("Voice Fetch Error:", str(e))
 
-        print("Voice fetch error:", e)
-
-    fallback = [
-        {"id":"EXAVITQu4vr4xnSDxMaL","name":"Rachel"},
-        {"id":"21m00Tcm4TlvDq8ikWAM","name":"Bella"},
-        {"id":"AZnzlk1XvdvUeBnXmlld","name":"Domi"},
-        {"id":"TxGEqnHWrfWFTfGW9XjX","name":"Josh"}
+    return [
+        {"id": "EXAVITQu4vr4xnSDxMaL", "name": "Rachel"},
+        {"id": "21m00Tcm4TlvDq8ikWAM", "name": "Bella"},
+        {"id": "AZnzlk1XvdvUeBnXmlld", "name": "Domi"},
+        {"id": "TxGEqnHWrfWFTfGW9XjX", "name": "Josh"},
+        {"id": "ErXwobaYiN019PkySvjV", "name": "Antoni"},
+        {"id": "VR6AewLTigWG4xSOukaG", "name": "Arnold"},
+        {"id": "pNInz6obpgDQGcFmaJgB", "name": "Adam"},
+        {"id": "yoZ06aMxZJJ28mfd3POQ", "name": "Sam"}
     ]
-
-    VOICE_CACHE = fallback
-
-    return fallback

@@ -5,14 +5,11 @@ VALID_LANGS = {
     "en", "hi", "mr", "ta", "te", "gu", "bn", "kn"
 }
 
-def translate(text, target_lang):
 
+def translate(text, target_lang):
     try:
 
         source_lang = detect(text)
-
-        if source_lang == target_lang:
-            return text
 
         if source_lang not in VALID_LANGS:
             source_lang = "auto"

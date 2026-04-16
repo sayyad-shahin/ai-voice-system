@@ -1,14 +1,15 @@
-import random
-
 def improve(text):
 
-    responses = [
-        "Here is the information you requested:",
-        "Let me help you with that.",
-        "Here is the answer:",
-        "Sure, I can help."
-    ]
+    replacements = {
+        "i want": "I would like",
+        "give me": "Please provide",
+        "tell me": "Could you tell me",
+        "what is": "Can you explain"
+    }
 
-    prefix = random.choice(responses)
+    text = text.lower()
 
-    return prefix + " " + text.capitalize()
+    for k, v in replacements.items():
+        text = text.replace(k, v)
+
+    return text.capitalize()
