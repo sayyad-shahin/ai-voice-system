@@ -2,10 +2,14 @@ import requests
 import uuid
 import os
 
+# ==============================
+# ENV VARIABLES
+# ==============================
+
 API_KEY = os.getenv("ELEVENLABS_API_KEY")
 
 if not API_KEY:
-    print("ERROR: ELEVENLABS_API_KEY not set")
+    print("❌ ERROR: ELEVENLABS_API_KEY not set")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 AUDIO_FOLDER = os.path.join(BASE_DIR, "..", "audio")
@@ -17,10 +21,19 @@ BACKEND_URL = os.getenv(
     "https://ai-voice-system-j313.onrender.com"
 )
 
+# ==============================
+# TEXT TO SPEECH (NO FALLBACK)
+# ==============================
 
 def speak(text, voice_id):
 
     try:
+        if not API_KEY:
+            raise Exception("Missing ELEVENLABS_API_KEY")
+
+        # ✅ Use selected voice OR default safe voice
+        if not voice_id:
+            voice_id = "EXAVITQu4vr4xnSDxMaL"
 
         url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
 
@@ -34,56 +47,43 @@ def speak(text, voice_id):
             "model_id": "eleven_multilingual_v2"
         }
 
+        # 🔥 CALL API
         r = requests.post(url, json=payload, headers=headers, timeout=30)
 
+        # 🔍 DEBUG LOGS (IMPORTANT)
         print("STATUS:", r.status_code)
         print("RESPONSE:", r.text)
 
+        # ❌ STRICT: must succeed
         if r.status_code != 200:
+            raise Exception(f"TTS FAILED: {r.text}")
 
-            print("Voice failed. Trying fallback voice...")
-
-            fallback_voice = "EXAVITQu4vr4xnSDxMaL"
-
-            url = f"https://api.elevenlabs.io/v1/text-to-speech/{fallback_voice}"
-            r = requests.post(url, json=payload, headers=headers, timeout=30)
-
-        if r.status_code != 200:
-            print("TTS API Error:", r.text)
-            return ""
-
+        # ✅ SAVE AUDIO
         filename = str(uuid.uuid4()) + ".mp3"
         filepath = os.path.join(AUDIO_FOLDER, filename)
 
-        # Validate response before saving
+        with open(filepath, "wb") as f:
+            f.write(r.content)
 
-        if r.status_code == 200 and "audio" in r.headers.get("Content-Type", ""):
-            with open(filepath, "wb") as f:
-                f.write(r.content)
-
-        else:
-            print("Invalid audio response from ElevenLabs")
-            print("Status:", r.status_code)
-            print("Headers:", r.headers)
-            print("Response:", r.text)
-
-            return ""
-
+        # ✅ RETURN AUDIO URL
         audio_url = f"{BACKEND_URL}/audio/{filename}"
 
-        print("Audio Generated:", audio_url)
+        print("✅ Audio Generated:", audio_url)
 
         return audio_url
 
     except Exception as e:
-        print("TTS Error:", str(e))
-        return ""
+        print("❌ TTS ERROR:", str(e))
+        return None
 
+
+# ==============================
+# GET VOICES
+# ==============================
 
 def get_voices():
 
     try:
-
         url = "https://api.elevenlabs.io/v1/voices"
 
         headers = {
@@ -93,7 +93,6 @@ def get_voices():
         r = requests.get(url, headers=headers, timeout=20)
 
         if r.status_code == 200:
-
             data = r.json()
 
             voices = []
@@ -110,6 +109,7 @@ def get_voices():
     except Exception as e:
         print("Voice Fetch Error:", str(e))
 
+    # ✅ fallback list (UI only)
     return [
         {"id": "EXAVITQu4vr4xnSDxMaL", "name": "Rachel"},
         {"id": "21m00Tcm4TlvDq8ikWAM", "name": "Bella"},
