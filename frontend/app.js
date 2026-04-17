@@ -167,8 +167,7 @@ if("webkitSpeechRecognition" in window){
         sendVoice(text)
     }
 
-    recognition.onerror = (event)=>{
-        console.log("Speech recognition error:", event.error)
+    recognition.onerror = ()=>{
         setState("ready")
     }
 
@@ -180,23 +179,13 @@ if("webkitSpeechRecognition" in window){
     alert("Speech recognition not supported")
 }
 
-/* 🔥 FIXED TRANSLATION LOGIC */
+/*  FINAL TRANSLATION LOGIC */
 
 async function sendVoice(text){
 
-    let sourceLang = document.getElementById("language").value
+    let targetLang = document.getElementById("language").value
 
-    // ✅ ALWAYS FORCE DIFFERENT TARGET LANGUAGE
-    let targetLang = "1" // English default
-
-    if(sourceLang === "1"){
-        targetLang = "2" // English → Hindi
-    } else {
-        targetLang = "1" // Any → English
-    }
-
-    console.log("SOURCE:", sourceLang)
-    console.log("TARGET:", targetLang)
+    console.log("TARGET LANGUAGE:", targetLang)
 
     try{
 
@@ -205,7 +194,6 @@ async function sendVoice(text){
             headers:{"Content-Type":"application/json"},
             body:JSON.stringify({
                 text:text,
-                source_language:sourceLang,
                 target_language:targetLang,
                 voice:selectedVoice
             })

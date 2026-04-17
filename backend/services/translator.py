@@ -1,29 +1,16 @@
 from deep_translator import GoogleTranslator
+from langdetect import detect
 
-
-def translate(text, source_lang, target_lang):
+def translate(text, target_lang):
     try:
-        #  Clean input
-        text = text.strip()
+        source_lang = detect(text)
 
-        if not text:
-            return ""
-
-        #  If same language, skip translation
-        if source_lang == target_lang:
-            return text
-
-        #  Translate
         translated = GoogleTranslator(
             source=source_lang,
             target=target_lang
         ).translate(text)
 
-        #  Fallback safety
-        if not translated or translated.strip() == "":
-            return text
-
-        return translated.strip()
+        return translated if translated else text
 
     except Exception as e:
         print("Translate Error:", e)
