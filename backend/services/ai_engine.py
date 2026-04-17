@@ -1,5 +1,8 @@
 def improve(text):
 
+    if not text:
+        return text
+
     replacements = {
         "i want": "I would like",
         "give me": "Please provide",
@@ -7,9 +10,10 @@ def improve(text):
         "what is": "Can you explain"
     }
 
-    text = text.lower()
+    text_lower = text.lower()
 
     for k, v in replacements.items():
-        text = text.replace(k, v)
+        if k in text_lower:
+            text = text.replace(k, v)
 
-    return text.capitalize()
+    return text.strip().capitalize()

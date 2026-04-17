@@ -1,5 +1,4 @@
 from deep_translator import GoogleTranslator
-from langdetect import detect
 
 VALID_LANGS = {
     "en", "hi", "mr", "ta", "te", "gu", "bn", "kn"
@@ -9,12 +8,10 @@ VALID_LANGS = {
 def translate(text, target_lang):
     try:
 
-        source_lang = detect(text)
+        #  Skip detection (BIG latency reduction)
+        source_lang = "auto"
 
-        if source_lang not in VALID_LANGS:
-            source_lang = "auto"
-
-        if target_lang.startswith("en"):
+        if target_lang not in VALID_LANGS:
             target_lang = "en"
 
         translated = GoogleTranslator(
@@ -22,7 +19,8 @@ def translate(text, target_lang):
             target=target_lang
         ).translate(text)
 
-        return translated
+        return translated if translated else text
 
-    except Exception:
+    except Exception as e:
+        print("Translate Error:", e)
         return text

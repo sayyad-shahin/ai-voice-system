@@ -31,20 +31,16 @@ def speak(text, voice_id):
 
         payload = {
             "text": text,
-            "model_id": "eleven_multilingual_v2"
+            "model_id": "eleven_multilingual_v2",
+            "voice_settings": {
+                "stability": 0.4,
+                "similarity_boost": 0.7
+            }
         }
 
-        r = requests.post(url, json=payload, headers=headers, timeout=30)
+        r = requests.post(url, json=payload, headers=headers, timeout=15)
 
-        if r.status_code != 200:
-
-            print("Voice failed. Trying fallback voice...")
-
-            fallback_voice = "EXAVITQu4vr4xnSDxMaL"
-
-            url = f"https://api.elevenlabs.io/v1/text-to-speech/{fallback_voice}"
-            r = requests.post(url, json=payload, headers=headers, timeout=30)
-
+        #  REMOVE fallback retry (adds delay)
         if r.status_code != 200:
             print("TTS API Error:", r.text)
             return ""
@@ -56,8 +52,6 @@ def speak(text, voice_id):
             f.write(r.content)
 
         audio_url = f"{BACKEND_URL}/audio/{filename}"
-
-        print("Audio Generated:", audio_url)
 
         return audio_url
 

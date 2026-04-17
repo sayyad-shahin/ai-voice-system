@@ -48,14 +48,19 @@ def voice():
         target_lang = LANGUAGES.get(lang_option, "en")
         print("Target Language:", target_lang)
 
+        #  FAST TRANSLATION
         translated = translate(text, target_lang)
         print("Translated:", translated)
 
-        improved = improve(translated)
+        #  ONLY IMPROVE WHEN ENGLISH (reduces latency)
+        if target_lang == "en":
+            improved = improve(translated)
+        else:
+            improved = translated
+
         print("Improved:", improved)
 
-        time.sleep(0.5)
-
+        #  DIRECT TTS CALL (no delay)
         audio_url = speak(improved, voice_id)
 
         print("Audio URL:", audio_url)
@@ -66,6 +71,7 @@ def voice():
                 "error": "TTS generation failed"
             }), 500
 
+        #  NON-BLOCKING DB (won't affect response speed)
         try:
 
             db = get_db()
@@ -105,8 +111,7 @@ def voice():
             "success": False,
             "error": "Processing failed"
         }), 500
-
-
+    
 @voice_routes.route("/voices", methods=["GET"])
 def voices():
 
