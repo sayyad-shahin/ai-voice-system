@@ -114,8 +114,6 @@ window.onload = function(){
 
     orb.onclick = ()=>{
 
-        console.log("Orb clicked")
-
         let lang = document.getElementById("language").value
 
         if(recognition){
@@ -168,7 +166,6 @@ if("webkitSpeechRecognition" in window){
     recognition.interimResults = false
 
     recognition.onstart = ()=>{
-        console.log("Listening started")
         setState("listening")
     }
 
@@ -188,7 +185,6 @@ if("webkitSpeechRecognition" in window){
     }
 
     recognition.onend = ()=>{
-        console.log("Listening ended")
         setState("processing")
     }
 
@@ -202,7 +198,13 @@ if("webkitSpeechRecognition" in window){
 
 async function sendVoice(text){
 
-    let lang = document.getElementById("language").value
+    let sourceLang = document.getElementById("language").value
+
+    //  hidden output language (from index.html)
+    let outputDropdown = document.getElementById("outputLanguage")
+
+    // if not selected, default = English
+    let targetLang = outputDropdown ? outputDropdown.value : "1"
 
     try{
 
@@ -211,7 +213,8 @@ async function sendVoice(text){
             headers:{"Content-Type":"application/json"},
             body:JSON.stringify({
                 text:text,
-                language:lang,
+                source_language:sourceLang,
+                target_language:targetLang,
                 voice:selectedVoice
             })
         })
@@ -219,11 +222,9 @@ async function sendVoice(text){
         let data = await res.json()
 
         if(!data.success){
-
             console.log("API error:", data.error)
             setState("ready")
             return
-
         }
 
         setTimeout(()=>{
@@ -231,15 +232,11 @@ async function sendVoice(text){
             setState("speaking")
 
             if(!data.audio){
-
-                console.log("Audio missing")
                 setState("ready")
                 return
-
             }
 
             let audio = new Audio(data.audio)
-
             audio.play()
 
             audio.onended = ()=>{
@@ -247,11 +244,10 @@ async function sendVoice(text){
             }
 
             audio.onerror = ()=>{
-                console.log("Audio failed")
                 setState("ready")
             }
 
-        },500)
+        },200) //  reduced delay (faster)
 
     }catch(e){
 

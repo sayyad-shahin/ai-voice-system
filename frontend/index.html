@@ -22,7 +22,7 @@
         <input id="username" placeholder="Username">
         <input id="password" type="password" placeholder="Password">
 
-        <!--  DYNAMIC VOICE SELECT -->
+        <!-- VOICE SELECT -->
         <select id="voiceSelect">
             <option>Loading voices...</option>
         </select>
@@ -38,7 +38,20 @@
     <div class="top-right">
         <button id="langBtn">🌐</button>
 
+        <!-- INPUT LANGUAGE (VISIBLE - SAME AS BEFORE) -->
         <select id="language" class="hidden">
+            <option value="1">English</option>
+            <option value="2">Hindi</option>
+            <option value="3">Marathi</option>
+            <option value="4">Tamil</option>
+            <option value="5">Telugu</option>
+            <option value="6">Gujarati</option>
+            <option value="7">Bengali</option>
+            <option value="8">Kannada</option>
+        </select>
+
+        <!--  OUTPUT LANGUAGE (HIDDEN - NO UI CHANGE) -->
+        <select id="outputLanguage" style="display:none;">
             <option value="1">English</option>
             <option value="2">Hindi</option>
             <option value="3">Marathi</option>
