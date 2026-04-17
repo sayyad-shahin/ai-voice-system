@@ -24,25 +24,37 @@ def voice():
     try:
         data = request.get_json()
 
+        if not data:
+            return jsonify({
+                "success": False,
+                "error": "Invalid request"
+            }), 400
+
         text = data.get("text", "").strip()
         source_option = str(data.get("source_language", "1"))
         target_option = str(data.get("target_language", "1"))
         voice_id = data.get("voice", "EXAVITQu4vr4xnSDxMaL")
 
         if not text:
-            return jsonify({"success": False, "error": "Empty input"}), 400
+            return jsonify({
+                "success": False,
+                "error": "Empty input"
+            }), 400
 
         source_lang = LANGUAGES.get(source_option, "en")
         target_lang = LANGUAGES.get(target_option, "en")
 
-        print("Input:", text)
-        print("Source:", source_lang)
-        print("Target:", target_lang)
+        print("----- REQUEST -----")
+        print("Input Text:", text)
+        print("Source Lang:", source_lang)
+        print("Target Lang:", target_lang)
 
+        #  Translation
         translated = translate(text, source_lang, target_lang)
 
-        print("Translated:", translated)
+        print("Translated Text:", translated)
 
+        #  Generate Audio
         audio_url = speak(translated, voice_id)
 
         if not audio_url:
@@ -51,6 +63,7 @@ def voice():
                 "error": "TTS failed"
             }), 500
 
+        #  Save to DB (non-blocking safe)
         try:
             db = get_db()
             cur = db.cursor()
@@ -82,7 +95,8 @@ def voice():
         })
 
     except Exception as e:
-        print("Error:", e)
+        print("Voice API Error:", e)
+
         return jsonify({
             "success": False,
             "error": "Processing failed"
@@ -91,7 +105,17 @@ def voice():
 
 @voice_routes.route("/voices", methods=["GET"])
 def voices():
-    return jsonify({
-        "success": True,
-        "voices": get_voices()
-    })
+
+    try:
+        return jsonify({
+            "success": True,
+            "voices": get_voices()
+        })
+
+    except Exception as e:
+        print("Voice Fetch Error:", e)
+
+        return jsonify({
+            "success": False,
+            "voices": []
+        })

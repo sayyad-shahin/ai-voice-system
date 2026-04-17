@@ -114,10 +114,8 @@ window.onload = function(){
 
     orb.onclick = ()=>{
 
-        let lang = document.getElementById("language").value
-
         if(recognition){
-            recognition.lang = getSpeechLang(lang)
+            recognition.lang = "en-US"   //  FIX: FORCE ENGLISH FOR BETTER ACCURACY
             recognition.start()
         }
 
@@ -136,23 +134,6 @@ function setState(state){
     else if(state === "processing") statusLine.innerText = "PROCESSING"
     else if(state === "speaking") statusLine.innerText = "SPEAKING"
     else statusLine.innerText = "READY"
-
-}
-
-/* LANGUAGE MAP */
-
-function getSpeechLang(code){
-
-    if(code=="1") return "en-US"
-    if(code=="2") return "hi-IN"
-    if(code=="3") return "mr-IN"
-    if(code=="4") return "ta-IN"
-    if(code=="5") return "te-IN"
-    if(code=="6") return "gu-IN"
-    if(code=="7") return "bn-IN"
-    if(code=="8") return "kn-IN"
-
-    return "en-US"
 
 }
 
@@ -198,13 +179,19 @@ if("webkitSpeechRecognition" in window){
 
 async function sendVoice(text){
 
+    //  CLEAN TEXT (important)
+    text = text.toLowerCase().trim()
+
     let sourceLang = document.getElementById("language").value
 
-    //  hidden output language (from index.html)
+    // hidden dropdown (optional)
     let outputDropdown = document.getElementById("outputLanguage")
 
-    // if not selected, default = English
     let targetLang = outputDropdown ? outputDropdown.value : "1"
+
+    console.log("FINAL TEXT:", text)
+    console.log("SOURCE:", sourceLang)
+    console.log("TARGET:", targetLang)
 
     try{
 
@@ -247,7 +234,7 @@ async function sendVoice(text){
                 setState("ready")
             }
 
-        },200) //  reduced delay (faster)
+        },200)
 
     }catch(e){
 

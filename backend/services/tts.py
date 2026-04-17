@@ -21,6 +21,15 @@ BACKEND_URL = os.getenv(
 def speak(text, voice_id):
 
     try:
+        #  Validate text
+        if not text or text.strip() == "":
+            print("TTS skipped: empty text")
+            return ""
+
+        text = text.strip()
+
+        print("TTS Request → Voice:", voice_id)
+        print("TTS Text:", text)
 
         url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
 
@@ -38,20 +47,27 @@ def speak(text, voice_id):
             }
         }
 
-        r = requests.post(url, json=payload, headers=headers, timeout=15)
+        #  Faster timeout
+        r = requests.post(url, json=payload, headers=headers, timeout=10)
 
-        #  REMOVE fallback retry (adds delay)
         if r.status_code != 200:
-            print("TTS API Error:", r.text)
+            print("TTS API Error:", r.status_code, r.text)
             return ""
 
+        #  Safe file creation
         filename = str(uuid.uuid4()) + ".mp3"
         filepath = os.path.join(AUDIO_FOLDER, filename)
 
-        with open(filepath, "wb") as f:
-            f.write(r.content)
+        try:
+            with open(filepath, "wb") as f:
+                f.write(r.content)
+        except Exception as file_error:
+            print("File Write Error:", file_error)
+            return ""
 
         audio_url = f"{BACKEND_URL}/audio/{filename}"
+
+        print("Audio Generated:", audio_url)
 
         return audio_url
 
@@ -70,7 +86,7 @@ def get_voices():
             "xi-api-key": API_KEY
         }
 
-        r = requests.get(url, headers=headers, timeout=20)
+        r = requests.get(url, headers=headers, timeout=10)
 
         if r.status_code == 200:
 
@@ -87,9 +103,12 @@ def get_voices():
             if voices:
                 return voices
 
+        print("Voice API Error:", r.status_code)
+
     except Exception as e:
         print("Voice Fetch Error:", str(e))
 
+    #  Fallback voices (instant, no API dependency)
     return [
         {"id": "EXAVITQu4vr4xnSDxMaL", "name": "Rachel"},
         {"id": "21m00Tcm4TlvDq8ikWAM", "name": "Bella"},
