@@ -54,7 +54,7 @@ def voice():
 
         #  ONLY IMPROVE WHEN ENGLISH (reduces latency)
         if target_lang == "en":
-            improved = improve(translated)
+            improved = (translated)
         else:
             improved = translated
 
