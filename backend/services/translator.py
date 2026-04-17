@@ -1,16 +1,22 @@
 from deep_translator import GoogleTranslator
-from langdetect import detect
 
 def translate(text, target_lang):
     try:
-        source_lang = detect(text)
-
         translated = GoogleTranslator(
-            source=source_lang,
+            source="auto",   #  VERY IMPORTANT
             target=target_lang
         ).translate(text)
 
-        return translated if translated else text
+        if translated and translated.strip().lower() != text.strip().lower():
+            return translated
+
+        print("Translation same as input → forcing fallback")
+
+        # fallback via English
+        temp = GoogleTranslator(source="auto", target="en").translate(text)
+        final = GoogleTranslator(source="en", target=target_lang).translate(temp)
+
+        return final if final else text
 
     except Exception as e:
         print("Translate Error:", e)

@@ -19,18 +19,7 @@ BACKEND_URL = os.getenv(
 
 
 def speak(text, voice_id):
-
     try:
-        #  Validate text
-        if not text or text.strip() == "":
-            print("TTS skipped: empty text")
-            return ""
-
-        text = text.strip()
-
-        print("TTS Request → Voice:", voice_id)
-        print("TTS Text:", text)
-
         url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
 
         headers = {
@@ -40,35 +29,29 @@ def speak(text, voice_id):
 
         payload = {
             "text": text,
-            "model_id": "eleven_multilingual_v2",
-            "voice_settings": {
-                "stability": 0.4,
-                "similarity_boost": 0.7
-            }
+            "model_id": "eleven_multilingual_v2"
         }
 
-        #  Faster timeout
-        r = requests.post(url, json=payload, headers=headers, timeout=10)
+        r = requests.post(url, json=payload, headers=headers, timeout=30)
 
         if r.status_code != 200:
-            print("TTS API Error:", r.status_code, r.text)
+            print("Voice failed. Trying fallback voice...")
+            fallback_voice = "EXAVITQu4vr4xnSDxMaL"
+            url = f"https://api.elevenlabs.io/v1/text-to-speech/{fallback_voice}"
+            r = requests.post(url, json=payload, headers=headers, timeout=30)
+
+        if r.status_code != 200:
+            print("TTS API Error:", r.text)
             return ""
 
-        #  Safe file creation
         filename = str(uuid.uuid4()) + ".mp3"
         filepath = os.path.join(AUDIO_FOLDER, filename)
 
-        try:
-            with open(filepath, "wb") as f:
-                f.write(r.content)
-        except Exception as file_error:
-            print("File Write Error:", file_error)
-            return ""
+        with open(filepath, "wb") as f:
+            f.write(r.content)
 
         audio_url = f"{BACKEND_URL}/audio/{filename}"
-
         print("Audio Generated:", audio_url)
-
         return audio_url
 
     except Exception as e:
@@ -77,38 +60,26 @@ def speak(text, voice_id):
 
 
 def get_voices():
-
     try:
-
         url = "https://api.elevenlabs.io/v1/voices"
+        headers = {"xi-api-key": API_KEY}
 
-        headers = {
-            "xi-api-key": API_KEY
-        }
-
-        r = requests.get(url, headers=headers, timeout=10)
+        r = requests.get(url, headers=headers, timeout=20)
 
         if r.status_code == 200:
-
             data = r.json()
-
             voices = []
-
             for v in data.get("voices", []):
                 voices.append({
                     "id": v.get("voice_id"),
                     "name": v.get("name")
                 })
-
             if voices:
                 return voices
-
-        print("Voice API Error:", r.status_code)
 
     except Exception as e:
         print("Voice Fetch Error:", str(e))
 
-    #  Fallback voices (instant, no API dependency)
     return [
         {"id": "EXAVITQu4vr4xnSDxMaL", "name": "Rachel"},
         {"id": "21m00Tcm4TlvDq8ikWAM", "name": "Bella"},

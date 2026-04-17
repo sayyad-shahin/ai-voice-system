@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from services.translator import translate
+from services.ai_engine import improve
 from services.tts import speak, get_voices
 from config import get_db
 import datetime
@@ -23,30 +24,32 @@ def voice():
     try:
         data = request.get_json()
 
+        if not data:
+            return jsonify({"success": False, "error": "Invalid request"}), 400
+
         text = data.get("text", "").strip()
-        target_option = str(data.get("target_language", "1"))
+        lang_option = str(data.get("language", "1"))
         voice_id = data.get("voice", "EXAVITQu4vr4xnSDxMaL")
 
         if not text:
             return jsonify({"success": False, "error": "Empty input"}), 400
 
-        target_lang = LANGUAGES.get(target_option, "en")
+        print("User Input:", text)
 
-        print("Input:", text)
-        print("Target:", target_lang)
+        target_lang = LANGUAGES.get(lang_option, "en")
+        print("Target Language:", target_lang)
 
-        # AUTO DETECT + TRANSLATE
         translated = translate(text, target_lang)
-
         print("Translated:", translated)
 
-        audio_url = speak(translated, voice_id)
+        improved = improve(translated)
+        print("Improved:", improved)
+
+        audio_url = speak(improved, voice_id)
+        print("Audio URL:", audio_url)
 
         if not audio_url:
-            return jsonify({
-                "success": False,
-                "error": "TTS failed"
-            }), 500
+            return jsonify({"success": False, "error": "TTS generation failed"}), 500
 
         try:
             db = get_db()
@@ -64,31 +67,31 @@ def voice():
 
             cur.execute(
                 "INSERT INTO conversations(input_text,output_text,language,created_at) VALUES (?,?,?,?)",
-                (text, translated, target_lang, str(datetime.datetime.now()))
+                (text, improved, target_lang, str(datetime.datetime.now()))
             )
 
             db.commit()
 
         except Exception as db_error:
-            print("DB Error:", db_error)
+            print("Database Error:", db_error)
 
         return jsonify({
             "success": True,
-            "text": translated,
+            "text": improved,
             "audio": audio_url
         })
 
     except Exception as e:
-        print("Error:", e)
-        return jsonify({
-            "success": False,
-            "error": "Processing failed"
-        }), 500
+        print("Voice API Error:", e)
+        return jsonify({"success": False, "error": "Processing failed"}), 500
 
 
 @voice_routes.route("/voices", methods=["GET"])
 def voices():
-    return jsonify({
-        "success": True,
-        "voices": get_voices()
-    })
+    try:
+        voices_list = get_voices()
+        return jsonify({"success": True, "voices": voices_list})
+
+    except Exception as e:
+        print("Voice Fetch Error:", e)
+        return jsonify({"success": False, "voices": []})
