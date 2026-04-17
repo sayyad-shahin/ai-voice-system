@@ -16,12 +16,13 @@ function goToLogin(){
     switchPage("loginPage")
 }
 
+/* LOAD VOICES */
+
 async function loadVoices(){
 
     let select = document.getElementById("voiceSelect")
 
     try{
-
         let res = await fetch(API + "/voices")
         let data = await res.json()
 
@@ -39,19 +40,16 @@ async function loadVoices(){
             selectedVoice = select.value
 
         }else{
-
             select.innerHTML = "<option>No voices available</option>"
-
         }
 
     }catch(e){
-
         console.log("Voice loading error:", e)
         select.innerHTML = "<option>Error loading voices</option>"
-
     }
-
 }
+
+/* LOGIN */
 
 async function login(){
 
@@ -67,7 +65,6 @@ async function login(){
     }
 
     try{
-
         let res = await fetch(API + "/auth",{
             method:"POST",
             headers:{"Content-Type":"application/json"},
@@ -85,19 +82,16 @@ async function login(){
             },800)
 
         }else{
-
             status.innerText = data.error || "Login failed"
-
         }
 
     }catch(e){
-
         console.log("Login error:", e)
         status.innerText = "Server error"
-
     }
-
 }
+
+/* INIT */
 
 window.onload = function(){
 
@@ -113,17 +107,16 @@ window.onload = function(){
     }
 
     orb.onclick = ()=>{
+        let lang = document.getElementById("language").value
 
         if(recognition){
-            recognition.lang = "en-US"   //  FIX: FORCE ENGLISH FOR BETTER ACCURACY
+            recognition.lang = getSpeechLang(lang)
             recognition.start()
         }
-
     }
-
 }
 
-/* STATE CHANGE */
+/* STATE */
 
 function setState(state){
 
@@ -134,10 +127,25 @@ function setState(state){
     else if(state === "processing") statusLine.innerText = "PROCESSING"
     else if(state === "speaking") statusLine.innerText = "SPEAKING"
     else statusLine.innerText = "READY"
-
 }
 
-/* SPEECH RECOGNITION */
+/* LANGUAGE MAP */
+
+function getSpeechLang(code){
+
+    if(code=="1") return "en-US"
+    if(code=="2") return "hi-IN"
+    if(code=="3") return "mr-IN"
+    if(code=="4") return "ta-IN"
+    if(code=="5") return "te-IN"
+    if(code=="6") return "gu-IN"
+    if(code=="7") return "bn-IN"
+    if(code=="8") return "kn-IN"
+
+    return "en-US"
+}
+
+/* SPEECH */
 
 if("webkitSpeechRecognition" in window){
 
@@ -157,7 +165,6 @@ if("webkitSpeechRecognition" in window){
         console.log("User said:", text)
 
         sendVoice(text)
-
     }
 
     recognition.onerror = (event)=>{
@@ -170,26 +177,24 @@ if("webkitSpeechRecognition" in window){
     }
 
 }else{
-
     alert("Speech recognition not supported")
-
 }
 
-/* SEND TEXT TO BACKEND */
+/* 🔥 FIXED TRANSLATION LOGIC */
 
 async function sendVoice(text){
 
-    //  CLEAN TEXT (important)
-    text = text.toLowerCase().trim()
-
     let sourceLang = document.getElementById("language").value
 
-    // hidden dropdown (optional)
-    let outputDropdown = document.getElementById("outputLanguage")
+    // ✅ ALWAYS FORCE DIFFERENT TARGET LANGUAGE
+    let targetLang = "1" // English default
 
-    let targetLang = outputDropdown ? outputDropdown.value : "1"
+    if(sourceLang === "1"){
+        targetLang = "2" // English → Hindi
+    } else {
+        targetLang = "1" // Any → English
+    }
 
-    console.log("FINAL TEXT:", text)
     console.log("SOURCE:", sourceLang)
     console.log("TARGET:", targetLang)
 
@@ -226,21 +231,13 @@ async function sendVoice(text){
             let audio = new Audio(data.audio)
             audio.play()
 
-            audio.onended = ()=>{
-                setState("ready")
-            }
-
-            audio.onerror = ()=>{
-                setState("ready")
-            }
+            audio.onended = ()=> setState("ready")
+            audio.onerror = ()=> setState("ready")
 
         },200)
 
     }catch(e){
-
         console.log("Voice request failed:", e)
         setState("ready")
-
     }
-
 }
