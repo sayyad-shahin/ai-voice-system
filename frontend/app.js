@@ -68,8 +68,8 @@ function setStatus(state, label) {
   tag.className   = "status-tag " + state;
   tag.textContent = label;
 
-  const icons = { listening:"🎤", processing:"⏳", speaking:"🔊", ready:"🎙️" };
-  icon.textContent = icons[state] || "🎙️";
+  const icons = { listening:"", processing:"⏳", speaking:"", ready:"" };
+  icon.textContent = icons[state] || "";
 }
 
 /* ─── PASSWORD TOGGLE ────────────────────────────────────────*/
