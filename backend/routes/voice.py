@@ -1,97 +1,108 @@
+import datetime
 from flask import Blueprint, request, jsonify
 from services.translator import translate
 from services.ai_engine import improve
 from services.tts import speak, get_voices
-from config import get_db
-import datetime
+from config import get_db, init_tables
 
 voice_routes = Blueprint("voice", __name__)
 
-LANGUAGES = {
-    "1": "en",
-    "2": "hi",
-    "3": "mr",
-    "4": "ta",
-    "5": "te",
-    "6": "gu",
-    "7": "bn",
-    "8": "kn"
+LANG_MAP = {
+    "1": "en",  "2": "hi",  "3": "mr",
+    "4": "ta",  "5": "te",  "6": "gu",
+    "7": "bn",  "8": "kn",
+}
+
+LANG_NAMES = {
+    "en": "English", "hi": "Hindi",   "mr": "Marathi",
+    "ta": "Tamil",   "te": "Telugu",  "gu": "Gujarati",
+    "bn": "Bengali", "kn": "Kannada",
 }
 
 
 @voice_routes.route("/voice", methods=["POST"])
 def voice():
     try:
-        data = request.get_json()
+        init_tables()
+        data = request.get_json(silent=True) or {}
 
-        if not data:
-            return jsonify({"success": False, "error": "Invalid request"}), 400
-
-        text = data.get("text", "").strip()
-        lang_option = str(data.get("language", "1"))
-        voice_id = data.get("voice", "EXAVITQu4vr4xnSDxMaL")
+        text        = (data.get("text") or "").strip()
+        lang_code   = str(data.get("language", "1"))
+        voice_id    = data.get("voice") or "EXAVITQu4vr4xnSDxMaL"
+        username    = (data.get("username") or "anonymous").strip()
 
         if not text:
-            return jsonify({"success": False, "error": "Empty input"}), 400
+            return jsonify({"success": False, "error": "No text received."}), 400
+        if len(text) > 15000:
+            return jsonify({"success": False,
+                            "error": "Input too long. Please limit to 15,000 characters."}), 400
 
-        print("User Input:", text)
+        target_lang = LANG_MAP.get(lang_code, "en")
+        lang_name   = LANG_NAMES.get(target_lang, "English")
+        print(f"[Voice] user={username} lang={target_lang} chars={len(text)}")
 
-        target_lang = LANGUAGES.get(lang_option, "en")
-        print("Target Language:", target_lang)
+        # 1. Translate
+        try:
+            translated = translate(text, target_lang)
+        except Exception as exc:
+            print(f"[Voice] Translation error: {exc}")
+            return jsonify({"success": False,
+                            "error": "Translation failed. Please try again."}), 500
 
-        translated = translate(text, target_lang)
-        print("Translated:", translated)
+        if not translated or not translated.strip():
+            return jsonify({"success": False,
+                            "error": "Translation returned an empty result."}), 500
 
-        improved = improve(translated)
-        print("Improved:", improved)
+        # 2. Post-process
+        final_text = improve(translated)
 
-        audio_url = speak(improved, voice_id)
-        print("Audio URL:", audio_url)
+        # 3. TTS
+        try:
+            audio_url = speak(final_text, voice_id)
+        except Exception as exc:
+            print(f"[Voice] TTS error: {exc}")
+            return jsonify({"success": False,
+                            "error": "Voice generation failed. Please try again."}), 500
 
         if not audio_url:
-            return jsonify({"success": False, "error": "TTS generation failed"}), 500
+            return jsonify({
+                "success": False,
+                "error": "Audio generation failed. Verify your ElevenLabs API key on Render."
+            }), 500
 
+        # 4. Persist (non-blocking)
         try:
-            db = get_db()
-            cur = db.cursor()
-
-            cur.execute("""
-            CREATE TABLE IF NOT EXISTS conversations(
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                input_text TEXT,
-                output_text TEXT,
-                language TEXT,
-                created_at TEXT
+            db  = get_db()
+            row = db.execute("SELECT id FROM users WHERE username=?", (username,)).fetchone()
+            uid = row["id"] if row else None
+            db.execute(
+                "INSERT INTO conversations"
+                "(user_id,username,input_text,output_text,language,audio_url,created_at)"
+                " VALUES(?,?,?,?,?,?,?)",
+                (uid, username, text, final_text, target_lang, audio_url,
+                 datetime.datetime.now().isoformat())
             )
-            """)
-
-            cur.execute(
-                "INSERT INTO conversations(input_text,output_text,language,created_at) VALUES (?,?,?,?)",
-                (text, improved, target_lang, str(datetime.datetime.now()))
-            )
-
             db.commit()
-
-        except Exception as db_error:
-            print("Database Error:", db_error)
+            db.close()
+        except Exception as exc:
+            print(f"[Voice] DB error (non-fatal): {exc}")
 
         return jsonify({
-            "success": True,
-            "text": improved,
-            "audio": audio_url
+            "success":   True,
+            "text":      final_text,
+            "audio":     audio_url,
+            "lang_name": lang_name,
         })
 
-    except Exception as e:
-        print("Voice API Error:", e)
-        return jsonify({"success": False, "error": "Processing failed"}), 500
+    except Exception as exc:
+        print(f"[Voice] Unhandled error: {exc}")
+        return jsonify({"success": False, "error": "Processing failed. Please try again."}), 500
 
 
 @voice_routes.route("/voices", methods=["GET"])
 def voices():
     try:
-        voices_list = get_voices()
-        return jsonify({"success": True, "voices": voices_list})
-
-    except Exception as e:
-        print("Voice Fetch Error:", e)
+        return jsonify({"success": True, "voices": get_voices()})
+    except Exception as exc:
+        print(f"[Voice] /voices error: {exc}")
         return jsonify({"success": False, "voices": []})

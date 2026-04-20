@@ -1,2 +1,2 @@
-def improve(text):
+def improve(text: str) -> str:
     return text
