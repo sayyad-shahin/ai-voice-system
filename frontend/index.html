@@ -20,7 +20,7 @@
     <h1 class="welcome-title">Voice<span class="hl">AI</span></h1>
     <p class="welcome-sub">
       Speak in any language — hear it back in any other.<br>
-      AI auto-detects your language. Just speak naturally.
+      Pick your input and output language. Just speak naturally.
     </p>
     <div class="pill-row">
       <span class="pill">English</span><span class="pill">हिंदी</span>
@@ -163,32 +163,44 @@
 <div id="appPage" class="page">
   <div class="ambient"><div class="amb a1"></div><div class="amb a2"></div><div class="amb a3"></div></div>
 
+  <!-- TOP BAR: FROM → TO dual selectors + Sign Out -->
   <div class="topbar">
     <div class="brand">Voice<span class="hl">AI</span></div>
     <div class="topbar-right">
-      <div class="lang-wrap">
-        <button class="lang-btn" id="langBtn" onclick="toggleLangMenu()">
-          <span id="langLabel">🇺🇸 English</span>
+
+      <!-- FROM language (what YOU speak → sets mic recognition lang) -->
+      <div class="lang-wrap" id="fromWrap">
+        <button class="lang-btn from-btn" id="fromBtn" onclick="toggleFromMenu()">
+          <span class="lang-dir-tag">I speak</span>
+          <span id="fromLabel">🇮🇳 Hindi</span>
           <span class="caret">▾</span>
         </button>
-        <div id="langMenu" class="lang-menu hidden">
-          <div class="lang-opt active" data-label="🇺🇸 English"  onclick="selectLang('1','🇺🇸 English')">🇺🇸 English</div>
-          <div class="lang-opt"        data-label="🇮🇳 Hindi"    onclick="selectLang('2','🇮🇳 Hindi')">🇮🇳 Hindi</div>
-          <div class="lang-opt"        data-label="🇮🇳 Marathi"  onclick="selectLang('3','🇮🇳 Marathi')">🇮🇳 Marathi</div>
-          <div class="lang-opt"        data-label="🇮🇳 Tamil"    onclick="selectLang('4','🇮🇳 Tamil')">🇮🇳 Tamil</div>
-          <div class="lang-opt"        data-label="🇮🇳 Telugu"   onclick="selectLang('5','🇮🇳 Telugu')">🇮🇳 Telugu</div>
-          <div class="lang-opt"        data-label="🇮🇳 Gujarati" onclick="selectLang('6','🇮🇳 Gujarati')">🇮🇳 Gujarati</div>
-          <div class="lang-opt"        data-label="🇧🇩 Bengali"  onclick="selectLang('7','🇧🇩 Bengali')">🇧🇩 Bengali</div>
-          <div class="lang-opt"        data-label="🇮🇳 Kannada"  onclick="selectLang('8','🇮🇳 Kannada')">🇮🇳 Kannada</div>
-        </div>
+        <div id="fromMenu" class="lang-menu hidden"></div>
       </div>
+
+      <!-- Arrow divider -->
+      <div class="lang-arrow">→</div>
+
+      <!-- TO language (translation target → sent to backend) -->
+      <div class="lang-wrap" id="toWrap">
+        <button class="lang-btn to-btn" id="toBtn" onclick="toggleToMenu()">
+          <span class="lang-dir-tag">Translate to</span>
+          <span id="toLabel">🇺🇸 English</span>
+          <span class="caret">▾</span>
+        </button>
+        <div id="toMenu" class="lang-menu hidden"></div>
+      </div>
+
       <button class="btn btn-ghost" onclick="logout()">Sign Out</button>
     </div>
   </div>
 
   <div class="voice-view">
     <div class="voice-center">
-      <div class="auto-badge">🤖 Auto-detects your language — just speak!</div>
+      <div class="lang-flow-badge" id="langFlowBadge">
+         Speak in <strong id="badgeFrom">Hindi</strong> → hear it in <strong id="badgeTo">English</strong>
+      </div>
+
       <div class="orb-shell">
         <div class="rings-wrap" id="rings">
           <div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div>
@@ -197,7 +209,9 @@
           <div class="orb-inner"><div class="orb-icon" id="orbIcon">🎙️</div></div>
         </div>
       </div>
+
       <div class="status-tag ready" id="statusTag">TAP TO SPEAK</div>
+
       <div class="info-box hidden" id="transcriptBox">
         <div class="box-lbl">You said</div>
         <div class="box-txt" id="transcriptText"></div>
@@ -209,10 +223,25 @@
       </div>
     </div>
   </div>
-  <input type="hidden" id="selLang" value="1">
 </div>
 
 <div class="toast hidden" id="toast"></div>
 <script src="app.js"></script>
+<script>
+  // Update the badge text when FROM/TO change — hook into the toggle functions
+  const _origToggleFrom = toggleFromMenu;
+  const _origToggleTo   = toggleToMenu;
+
+  // Patch: update badge whenever a lang is selected
+  // (badge update is done inline inside app.js via getLang)
+  function updateBadge(){
+    const bf=document.getElementById("badgeFrom");
+    const bt=document.getElementById("badgeTo");
+    if(bf) bf.textContent=getLang(_fromCode).label.replace(/^\S+\s*/,"");
+    if(bt) bt.textContent=getLang(_toCode).label.replace(/^\S+\s*/,"");
+  }
+  // Poll badge every 400ms to stay in sync (lightweight, clean)
+  setInterval(updateBadge, 400);
+</script>
 </body>
 </html>

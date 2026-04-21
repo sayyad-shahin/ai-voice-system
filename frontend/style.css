@@ -479,3 +479,80 @@ html, body {
   text-align: center;
   margin-bottom: 4px;
 }
+
+/* ── DUAL LANGUAGE SELECTOR (FROM → TO) ───────────────────── */
+
+/* Remove old auto-badge, replace with lang-flow-badge */
+.auto-badge { display: none; }
+
+.lang-flow-badge {
+  background: rgba(58,127,255,.08);
+  border: 1px solid rgba(58,127,255,.2);
+  border-radius: 100px;
+  padding: 8px 22px;
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+  margin-bottom: 4px;
+  transition: all .3s;
+}
+.lang-flow-badge strong {
+  color: var(--blue2);
+  font-weight: 700;
+}
+
+/* Direction labels inside buttons */
+.lang-dir-tag {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .8px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-right: 4px;
+}
+
+/* FROM button — tinted blue */
+.from-btn {
+  border-color: rgba(58,127,255,.28) !important;
+  background: rgba(58,127,255,.08) !important;
+}
+.from-btn:hover {
+  border-color: rgba(58,127,255,.5) !important;
+  background: rgba(58,127,255,.14) !important;
+}
+
+/* TO button — tinted violet */
+.to-btn {
+  border-color: rgba(155,89,247,.28) !important;
+  background: rgba(155,89,247,.08) !important;
+}
+.to-btn:hover {
+  border-color: rgba(155,89,247,.5) !important;
+  background: rgba(155,89,247,.14) !important;
+}
+
+/* Arrow between selectors */
+.lang-arrow {
+  font-size: 16px;
+  color: var(--muted);
+  flex-shrink: 0;
+  user-select: none;
+}
+
+/* Topbar adjustments for dual selector */
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Responsive: stack selectors on small screens */
+@media (max-width: 600px) {
+  .lang-dir-tag { display: none; }
+  .topbar { padding: 10px 12px; gap: 6px; flex-wrap: wrap; }
+  .topbar-right { gap: 5px; }
+  .lang-arrow { font-size: 13px; }
+  .lang-btn { font-size: 12px; padding: 6px 10px; }
+  .lang-flow-badge { font-size: 11px; padding: 6px 14px; }
+}

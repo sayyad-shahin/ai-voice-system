@@ -1,4 +1,35 @@
+/* ═══════════════════════════════════════════════════════
+   VoiceAI  app.js  v6.0  DUAL-LANG FIXED
+   ─────────────────────────────────────────────────────
+   TWO selectors:
+     FROM (#fromBtn) → language YOU ARE SPEAKING
+                       → sets recognition.lang on the mic
+     TO   (#toBtn)   → language TO TRANSLATE INTO
+                       → sent to backend as target
+
+   These are 100% independent of each other.
+   Example: FROM=Hindi (mic hears Hindi script)
+            TO=Marathi  (backend outputs Marathi)
+            Result: "कैसे हो?" → "कसे आहात?" ✅
+═══════════════════════════════════════════════════════ */
+
 const API = "https://ai-voice-system-j313.onrender.com";
+
+/* ── LANGUAGE TABLE ──────────────────────────────────── */
+const LANGS = [
+  { code:"1", lang:"en", sr:"en-US", label:"🇺🇸 English"  },
+  { code:"2", lang:"hi", sr:"hi-IN", label:"🇮🇳 Hindi"    },
+  { code:"3", lang:"mr", sr:"mr-IN", label:"🇮🇳 Marathi"  },
+  { code:"4", lang:"ta", sr:"ta-IN", label:"🇮🇳 Tamil"    },
+  { code:"5", lang:"te", sr:"te-IN", label:"🇮🇳 Telugu"   },
+  { code:"6", lang:"gu", sr:"gu-IN", label:"🇮🇳 Gujarati" },
+  { code:"7", lang:"bn", sr:"bn-IN", label:"🇧🇩 Bengali"  },
+  { code:"8", lang:"kn", sr:"kn-IN", label:"🇮🇳 Kannada"  },
+];
+let _fromCode = "2";  // default: speak Hindi
+let _toCode   = "1";  // default: translate to English
+
+function getLang(code){ return LANGS.find(l=>l.code===code)||LANGS[0]; }
 
 /* SESSION */
 const S = {
@@ -10,7 +41,7 @@ const S = {
   get ok(){return sessionStorage.getItem("va_ok")==="1";}
 };
 
-/* PAGE NAV + AUTH GUARD */
+/* PAGE NAV */
 function showPage(id){
   if(id==="appPage"&&!S.ok){toast("Please sign in to continue.");id="loginPage";}
   document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
@@ -25,7 +56,7 @@ function toast(msg,ms=3400){
   clearTimeout(_tt);_tt=setTimeout(()=>el.classList.add("hidden"),ms);
 }
 
-/* MESSAGES */
+/* STATUS MESSAGES */
 function showMsg(id,text,type){
   const el=document.getElementById(id);if(!el)return;
   el.textContent=text;el.className="msg show "+type;
@@ -57,26 +88,94 @@ function togglePw(id,btn){
   else{inp.type="password";btn.textContent="👁";}
 }
 
-/* LANGUAGE SELECTOR */
-let _langOpen=false;
-function toggleLangMenu(){
-  const menu=document.getElementById("langMenu");
-  const btn=document.getElementById("langBtn");
-  _langOpen=!_langOpen;
-  menu.classList.toggle("hidden",!_langOpen);
-  btn.classList.toggle("open",_langOpen);
+/* ── DUAL LANGUAGE DROPDOWNS ─────────────────────────────
+   Each dropdown is built dynamically from LANGS[].
+   FROM menu updates recognition.lang on selection.
+   TO   menu updates _toCode which is sent to backend.
+─────────────────────────────────────────────────────── */
+let _fromOpen=false, _toOpen=false;
+
+function _buildMenu(menuId, activeCode, onSelect){
+  const menu=document.getElementById(menuId);
+  if(!menu)return;
+  menu.innerHTML="";
+  LANGS.forEach(l=>{
+    const div=document.createElement("div");
+    div.className="lang-opt"+(l.code===activeCode?" active":"");
+    div.textContent=l.label;
+    div.onclick=()=>onSelect(l);
+    menu.appendChild(div);
+  });
 }
-function selectLang(code,label){
-  document.getElementById("selLang").value=code;
-  document.getElementById("langLabel").textContent=label;
-  document.querySelectorAll(".lang-opt").forEach(el=>
-    el.classList.toggle("active",el.getAttribute("data-label")===label));
-  if(_langOpen)toggleLangMenu();
-  toast("Output: "+label.replace(/^\S+\s*/,""));
+
+function toggleFromMenu(){
+  // Close TO menu first
+  _toOpen=false;
+  document.getElementById("toMenu").classList.add("hidden");
+  document.getElementById("toBtn").classList.remove("open");
+
+  _fromOpen=!_fromOpen;
+  const menu=document.getElementById("fromMenu");
+  const btn=document.getElementById("fromBtn");
+  if(_fromOpen){
+    _buildMenu("fromMenu",_fromCode,l=>{
+      _fromCode=l.code;
+      document.getElementById("fromLabel").textContent=l.label;
+      // ← KEY: update speech recognition language to what user speaks
+      if(recognition) recognition.lang=l.sr;
+      _fromOpen=false;
+      menu.classList.add("hidden");
+      btn.classList.remove("open");
+      toast("Speaking in: "+l.label.replace(/^\S+\s*/,""));
+    });
+    menu.classList.remove("hidden");
+    btn.classList.add("open");
+  } else {
+    menu.classList.add("hidden");
+    btn.classList.remove("open");
+  }
 }
+
+function toggleToMenu(){
+  // Close FROM menu first
+  _fromOpen=false;
+  document.getElementById("fromMenu").classList.add("hidden");
+  document.getElementById("fromBtn").classList.remove("open");
+
+  _toOpen=!_toOpen;
+  const menu=document.getElementById("toMenu");
+  const btn=document.getElementById("toBtn");
+  if(_toOpen){
+    _buildMenu("toMenu",_toCode,l=>{
+      _toCode=l.code;
+      document.getElementById("toLabel").textContent=l.label;
+      _toOpen=false;
+      menu.classList.add("hidden");
+      btn.classList.remove("open");
+      toast("Translating to: "+l.label.replace(/^\S+\s*/,""));
+    });
+    menu.classList.remove("hidden");
+    btn.classList.add("open");
+  } else {
+    menu.classList.add("hidden");
+    btn.classList.remove("open");
+  }
+}
+
+// Close menus on outside click
 document.addEventListener("click",e=>{
-  const wrap=document.querySelector(".lang-wrap");
-  if(wrap&&!wrap.contains(e.target)&&_langOpen)toggleLangMenu();
+  const fw=document.getElementById("fromWrap");
+  const tw=document.getElementById("toWrap");
+  if(fw&&!fw.contains(e.target)&&_fromOpen){
+    _fromOpen=false;
+    document.getElementById("fromMenu").classList.add("hidden");
+    document.getElementById("fromBtn").classList.remove("open");
+  }
+  if(tw&&!tw.contains(e.target)&&_toOpen){
+    _toOpen=false;
+    document.getElementById("toMenu").classList.add("hidden");
+    document.getElementById("toBtn").classList.remove("open");
+  }
 });
 
 /* LOAD VOICES */
@@ -243,19 +342,12 @@ function logout(){
   showPage("welcomePage");toast("Signed out successfully.");
 }
 
-/* ═══════════════════════════════════════
-   SPEECH RECOGNITION
-   ─────────────────────────────────────
-   CRITICAL FIX: recognition.lang is ALWAYS
-   "hi-IN" (broad Indian language support that
-   also catches English). It is NEVER changed
-   to the output/translation language.
-
-   The selected language (selLang) is ONLY sent
-   to the backend as the TRANSLATION TARGET.
-   It never touches recognition.lang.
-═══════════════════════════════════════ */
-let recognition=null,_busy=false;
+/* ── SPEECH RECOGNITION ──────────────────────────────────
+   recognition.lang always tracks _fromCode.
+   It is updated at init and every time FROM dropdown changes.
+   The TO language (_toCode) never touches recognition.lang.
+─────────────────────────────────────────────────────── */
+let recognition=null, _busy=false;
 
 (function initSR(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
@@ -264,17 +356,15 @@ let recognition=null,_busy=false;
   recognition.continuous=false;
   recognition.interimResults=false;
   recognition.maxAlternatives=1;
-
-  // ✅ FIXED: Always listen in hi-IN which covers Hindi, English, and most
-  // Indian languages via Chrome's auto-detect fallback. Never change this
-  // based on the output language selector.
-  recognition.lang="hi-IN";
+  recognition.lang=getLang(_fromCode).sr;   // ← driven by FROM, not TO
 
   recognition.onstart=()=>{_busy=true;setStatus("listening","LISTENING…");};
 
   recognition.onresult=event=>{
     const text=event.results[0][0].transcript.trim();
-    console.log("[SR] Heard:",text);
+    console.log("[SR] Heard:",text,
+      "| FROM lang:",getLang(_fromCode).label,
+      "| TO lang:",getLang(_toCode).label);
     document.getElementById("transcriptText").textContent=text;
     document.getElementById("transcriptBox").classList.remove("hidden");
     document.getElementById("responseBox").classList.add("hidden");
@@ -307,34 +397,28 @@ function startListening(){
      orb.className.includes("speaking"))return;
   if(!recognition){toast("Speech recognition not supported. Use Chrome or Edge.");return;}
 
-  // ✅ FIXED: Do NOT change recognition.lang here. It stays "hi-IN" always.
-  // The output language is read separately in sendVoice() as the translation target.
-  console.log("[SR] Listening — will translate to lang code:",
-              document.getElementById("selLang").value||"1");
+  // Sync recognition.lang to current FROM selection before every listen
+  recognition.lang=getLang(_fromCode).sr;
+  console.log("[SR] Listening | mic lang:",recognition.lang,"→ translate to code:",_toCode);
   try{recognition.start();}catch(e){setStatus("ready","TAP TO SPEAK");}
 }
 
-/* ═══════════════════════════════════════
-   SEND TO BACKEND
-   ─────────────────────────────────────
-   Sends the transcribed text + the selected
-   OUTPUT language code to /voice endpoint.
-   Backend translates FROM auto-detected input
-   TO the target language.
-═══════════════════════════════════════ */
+/* ── SEND TO BACKEND ─────────────────────────────────────
+   Sends transcribed text + _toCode as the translation target.
+   The backend auto-detects the source language from the text
+   and translates to the target language.
+─────────────────────────────────────────────────────── */
 async function sendVoice(text){
-  // ✅ FIXED: lang is the TRANSLATION TARGET only, has nothing to do with mic
-  const lang=document.getElementById("selLang").value||"1";
+  setStatus("processing","TRANSLATING…");
   const voice=S.voice;
   const username=S.username;
-
-  setStatus("processing","TRANSLATING…");
+  const toL=getLang(_toCode);
 
   try{
     const res=await fetch(API+"/voice",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({text, language:lang, voice, username})
+      body:JSON.stringify({text, language:_toCode, voice, username})
     });
 
     if(!res.ok){
@@ -352,7 +436,7 @@ async function sendVoice(text){
 
     document.getElementById("responseText").textContent=data.text;
     document.getElementById("responseMeta").textContent=
-      "🔊 Speaking in "+(data.lang_name||"selected language");
+      "🔊 Speaking in "+(data.lang_name||toL.label.replace(/^\S+\s*/,""));
     document.getElementById("responseBox").classList.remove("hidden");
     setStatus("speaking","SPEAKING…");
 
@@ -374,5 +458,7 @@ async function sendVoice(text){
 /* INIT */
 window.addEventListener("load",()=>{
   loadVoices();
+  document.getElementById("fromLabel").textContent=getLang(_fromCode).label;
+  document.getElementById("toLabel").textContent=getLang(_toCode).label;
   showPage(S.ok?"appPage":"welcomePage");
 });
