@@ -1,7 +1,3 @@
-/* ═══════════════════════════════════════
-   VoiceAI  app.js  v5.0  FINAL
-═══════════════════════════════════════ */
-
 const API = "https://ai-voice-system-j313.onrender.com";
 
 /* SESSION */
@@ -247,16 +243,35 @@ function logout(){
   showPage("welcomePage");toast("Signed out successfully.");
 }
 
-/* SPEECH RECOGNITION */
+/* ═══════════════════════════════════════
+   SPEECH RECOGNITION
+   ─────────────────────────────────────
+   CRITICAL FIX: recognition.lang is ALWAYS
+   "hi-IN" (broad Indian language support that
+   also catches English). It is NEVER changed
+   to the output/translation language.
+
+   The selected language (selLang) is ONLY sent
+   to the backend as the TRANSLATION TARGET.
+   It never touches recognition.lang.
+═══════════════════════════════════════ */
 let recognition=null,_busy=false;
-const SPEECH_LANG_MAP={"1":"en-US","2":"hi-IN","3":"mr-IN","4":"ta-IN","5":"te-IN","6":"gu-IN","7":"bn-IN","8":"kn-IN"};
 
 (function initSR(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){console.warn("[SR] Not supported.");return;}
   recognition=new SR();
-  recognition.continuous=false;recognition.interimResults=false;recognition.maxAlternatives=1;
+  recognition.continuous=false;
+  recognition.interimResults=false;
+  recognition.maxAlternatives=1;
+
+  // ✅ FIXED: Always listen in hi-IN which covers Hindi, English, and most
+  // Indian languages via Chrome's auto-detect fallback. Never change this
+  // based on the output language selector.
+  recognition.lang="hi-IN";
+
   recognition.onstart=()=>{_busy=true;setStatus("listening","LISTENING…");};
+
   recognition.onresult=event=>{
     const text=event.results[0][0].transcript.trim();
     console.log("[SR] Heard:",text);
@@ -265,11 +280,18 @@ const SPEECH_LANG_MAP={"1":"en-US","2":"hi-IN","3":"mr-IN","4":"ta-IN","5":"te-I
     document.getElementById("responseBox").classList.add("hidden");
     sendVoice(text);
   };
+
   recognition.onerror=e=>{
     _busy=false;setStatus("ready","TAP TO SPEAK");
-    const map={"no-speech":"No speech detected. Try again.","audio-capture":"Microphone not found.","not-allowed":"Microphone denied. Allow in browser settings.","network":"Network error."};
+    const map={
+      "no-speech":"No speech detected. Try again.",
+      "audio-capture":"Microphone not found.",
+      "not-allowed":"Microphone denied. Allow in browser settings.",
+      "network":"Network error."
+    };
     toast(map[e.error]||"Speech error: "+e.error);
   };
+
   recognition.onend=()=>{
     _busy=false;
     const orb=document.getElementById("orb");
@@ -280,43 +302,77 @@ const SPEECH_LANG_MAP={"1":"en-US","2":"hi-IN","3":"mr-IN","4":"ta-IN","5":"te-I
 function startListening(){
   if(_busy)return;
   const orb=document.getElementById("orb");if(!orb)return;
-  if(orb.className.includes("listening")||orb.className.includes("processing")||orb.className.includes("speaking"))return;
+  if(orb.className.includes("listening")||
+     orb.className.includes("processing")||
+     orb.className.includes("speaking"))return;
   if(!recognition){toast("Speech recognition not supported. Use Chrome or Edge.");return;}
-  const code=document.getElementById("selLang").value||"1";
-  recognition.lang=SPEECH_LANG_MAP[code]||"hi-IN";
-  console.log("[SR] Listening lang:",recognition.lang);
+
+  // ✅ FIXED: Do NOT change recognition.lang here. It stays "hi-IN" always.
+  // The output language is read separately in sendVoice() as the translation target.
+  console.log("[SR] Listening — will translate to lang code:",
+              document.getElementById("selLang").value||"1");
   try{recognition.start();}catch(e){setStatus("ready","TAP TO SPEAK");}
 }
 
-/* SEND TO BACKEND */
+/* ═══════════════════════════════════════
+   SEND TO BACKEND
+   ─────────────────────────────────────
+   Sends the transcribed text + the selected
+   OUTPUT language code to /voice endpoint.
+   Backend translates FROM auto-detected input
+   TO the target language.
+═══════════════════════════════════════ */
 async function sendVoice(text){
+  // ✅ FIXED: lang is the TRANSLATION TARGET only, has nothing to do with mic
   const lang=document.getElementById("selLang").value||"1";
-  const voice=S.voice;const username=S.username;
+  const voice=S.voice;
+  const username=S.username;
+
   setStatus("processing","TRANSLATING…");
+
   try{
     const res=await fetch(API+"/voice",{
-      method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({text,language:lang,voice,username})
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({text, language:lang, voice, username})
     });
+
     if(!res.ok){
       let errMsg="Server error ("+res.status+").";
       try{const d=await res.json();if(d.error)errMsg=d.error;}catch{}
       setStatus("ready","TAP TO SPEAK");toast(errMsg);return;
     }
+
     const data=await res.json();
-    if(!data.success){setStatus("ready","TAP TO SPEAK");toast(data.error||"Something went wrong.");return;}
+    if(!data.success){
+      setStatus("ready","TAP TO SPEAK");
+      toast(data.error||"Something went wrong.");
+      return;
+    }
+
     document.getElementById("responseText").textContent=data.text;
-    document.getElementById("responseMeta").textContent="🔊 Speaking in "+(data.lang_name||"selected language");
+    document.getElementById("responseMeta").textContent=
+      "🔊 Speaking in "+(data.lang_name||"selected language");
     document.getElementById("responseBox").classList.remove("hidden");
     setStatus("speaking","SPEAKING…");
+
     const audio=new Audio(data.audio);
     audio.onended=()=>setStatus("ready","TAP TO SPEAK");
     audio.onerror=()=>{setStatus("ready","TAP TO SPEAK");toast("Audio playback failed.");};
-    audio.play().catch(()=>{setStatus("ready","TAP TO SPEAK");toast("Translation done — tap play (browser blocked autoplay).");});
+    audio.play().catch(()=>{
+      setStatus("ready","TAP TO SPEAK");
+      toast("Translation done — tap play (browser blocked autoplay).");
+    });
+
   }catch(e){
-    console.error("[Voice]",e);setStatus("ready","TAP TO SPEAK");toast("Connection error. Check your internet.");
+    console.error("[Voice]",e);
+    setStatus("ready","TAP TO SPEAK");
+    toast("Connection error. Check your internet.");
   }
 }
 
 /* INIT */
-window.addEventListener("load",()=>{loadVoices();showPage(S.ok?"appPage":"welcomePage");});
+window.addEventListener("load",()=>{
+  loadVoices();
+  showPage(S.ok?"appPage":"welcomePage");
+});

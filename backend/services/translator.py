@@ -1,8 +1,3 @@
-"""
-translator.py — Auto-detect input language, translate to target.
-Uses concurrent chunks for speed on long texts.
-"""
-
 import re, time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from deep_translator import GoogleTranslator
@@ -10,6 +5,9 @@ from deep_translator import GoogleTranslator
 _MAX_CHARS   = 4800
 _MAX_WORKERS = 4
 _RETRY_WAIT  = 0.5
+
+# Languages that benefit from forced two-hop routing via English
+_TWO_HOP_LANGS = {"mr", "ta", "te", "gu", "bn", "kn", "hi"}
 
 
 def _split(text):
@@ -27,39 +25,68 @@ def _split(text):
     return chunks or [text]
 
 
-def _translate_one(chunk, target, retries=2):
+def _google(text, source, target, retries=2):
+    """Single translation call with retry."""
     for attempt in range(retries + 1):
         try:
-            result = GoogleTranslator(source="auto", target=target).translate(chunk)
+            result = GoogleTranslator(source=source, target=target).translate(text)
             if result and result.strip():
                 return result.strip()
         except Exception as e:
-            print(f"[Translator] attempt {attempt+1}: {e}")
+            print(f"[Translator] {source}→{target} attempt {attempt+1}: {e}")
             if attempt < retries:
                 time.sleep(_RETRY_WAIT * (attempt + 1))
+    return None
 
-    # Two-hop fallback via English
-    if target != "en":
-        try:
-            en = GoogleTranslator(source="auto", target="en").translate(chunk)
-            if en:
-                final = GoogleTranslator(source="en", target=target).translate(en)
-                if final and final.strip():
-                    return final.strip()
-        except Exception as e:
-            print(f"[Translator] two-hop failed: {e}")
 
-    return chunk
+def _translate_one(chunk, target):
+    """
+    Translate one chunk to target language.
+
+    Strategy:
+      1. If target is English  → direct auto→en
+      2. If target is Indian   → two-hop: auto→en → en→target
+         (most reliable for Hindi/Marathi/Tamil etc.)
+      3. Final safety net      → direct auto→target
+    """
+    # ── Step 1: to English first (universal pivot) ────────────────────
+    en_text = _google(chunk, "auto", "en")
+
+    if not en_text:
+        # Could not get English — fall back to direct translation
+        print(f"[Translator] English pivot failed, trying direct auto→{target}")
+        result = _google(chunk, "auto", target)
+        return result if result else chunk
+
+    # ── Step 2: English is the target — we're done ────────────────────
+    if target == "en":
+        return en_text
+
+    # ── Step 3: English → target language ────────────────────────────
+    final = _google(en_text, "en", target)
+    if final:
+        return final
+
+    # ── Step 4: Last resort — direct auto → target ────────────────────
+    print(f"[Translator] en→{target} failed, trying direct auto→{target}")
+    result = _google(chunk, "auto", target)
+    return result if result else chunk
 
 
 def translate(text, target_lang):
+    """Translate text (any language) to target_lang using auto-detect."""
     if not text or not text.strip():
         return text
     text   = text.strip()
     chunks = _split(text)
 
+    print(f"[Translator] Translating {len(chunks)} chunk(s) → {target_lang}")
+
     if len(chunks) == 1:
-        return _translate_one(chunks[0], target_lang)
+        result = _translate_one(chunks[0], target_lang)
+        print(f"[Translator] Input:  '{chunks[0][:80]}'")
+        print(f"[Translator] Output: '{result[:80]}'")
+        return result
 
     results = {}
     with ThreadPoolExecutor(max_workers=_MAX_WORKERS) as pool:
