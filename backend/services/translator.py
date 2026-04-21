@@ -1,18 +1,3 @@
-"""
-translator.py
-Fast, robust translation using deep_translator (Google Translate).
-
-Strategy
---------
-1. Split long text at sentence boundaries into ≤4800-char chunks.
-2. Translate chunks concurrently with ThreadPoolExecutor for speed.
-3. Retry each chunk up to 2 times on failure.
-4. If a chunk still fails, fall back via English as an intermediate step.
-5. Rejoin chunks preserving natural spacing.
-
-Typical 300-word paragraph: 5–10 s total (vs 20 s sequential).
-"""
-
 import re
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed

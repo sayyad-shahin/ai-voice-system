@@ -1,13 +1,3 @@
-"""
-app.py — VoiceAI Flask backend entry point.
-
-Start locally:
-    python app.py
-
-Deploy on Render (Procfile):
-    web: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
-"""
-
 import os
 from flask import Flask, send_from_directory
 from flask_cors import CORS

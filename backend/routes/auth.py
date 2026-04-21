@@ -1,19 +1,3 @@
-"""
-auth.py — VoiceAI Authentication
-=================================
-Routes:
-  POST /auth              — login
-  POST /register/request  — step 1: validate + send OTP to email
-  POST /register/verify   — step 2: verify OTP + create account
-  POST /forgot-password   — send reset code to email
-  POST /reset-password    — verify reset code + update password
-
-Security:
-  - Passwords hashed with SHA-256
-  - OTP codes: 6 chars (uppercase + digits), 10 min expiry
-  - All logins/registrations logged to login_activity
-"""
-
 import os, random, string, hashlib, datetime, smtplib, re
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart

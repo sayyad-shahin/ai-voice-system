@@ -1,16 +1,3 @@
-"""
-tts.py
-ElevenLabs text-to-speech integration.
-
-Features
---------
-- Uses eleven_multilingual_v2 for all languages.
-- Automatic fallback to Rachel voice if the requested voice fails.
-- Periodic cleanup of audio files older than 2 hours.
-- Returns a full public URL for the generated mp3.
-- Detailed error logging; never crashes silently.
-"""
-
 import os
 import uuid
 import glob
