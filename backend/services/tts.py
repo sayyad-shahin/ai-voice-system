@@ -11,11 +11,10 @@ BASE_DIR  = os.path.dirname(os.path.abspath(__file__))
 AUDIO_DIR = os.path.abspath(os.path.join(BASE_DIR, "..", "audio"))
 os.makedirs(AUDIO_DIR, exist_ok=True)
 
-FALLBACK_VOICE_ID = "EXAVITQu4vr4xnSDxMaL"   # Rachel
+FALLBACK_VOICE_ID = "EXAVITQu4vr4xnSDxMaL"
 MODEL             = "eleven_multilingual_v2"
 TIMEOUT           = 60
 
-# Language code map for gTTS fallback
 GTTS_LANG_MAP = {
     "en": "en", "hi": "hi", "mr": "mr",
     "ta": "ta", "te": "te", "gu": "gu",
@@ -45,21 +44,18 @@ def _purge_old_audio(max_age_h: int = 2):
 
 
 def _save_audio(audio_bytes: bytes) -> str:
-    """Save bytes to mp3 file, return public URL."""
     filename = f"{uuid.uuid4().hex}.mp3"
     filepath = os.path.join(AUDIO_DIR, filename)
     try:
         with open(filepath, "wb") as f:
             f.write(audio_bytes)
         url = f"{BACKEND_URL}/audio/{filename}"
-        print(f"[TTS] ✅ Audio saved: {url}")
+        print(f"[TTS] ✅ Saved: {url}")
         return url
     except Exception as e:
-        print(f"[TTS] ❌ Failed to save audio: {e}")
+        print(f"[TTS] ❌ Save error: {e}")
         return ""
 
-
-# ─── ELEVENLABS ───────────────────────────────────────────────
 
 def _elevenlabs(text: str, voice_id: str) -> bytes | None:
     if not API_KEY or len(API_KEY) < 20:
@@ -67,7 +63,6 @@ def _elevenlabs(text: str, voice_id: str) -> bytes | None:
         return None
 
     print(f"[TTS] Trying ElevenLabs key={API_KEY[:8]}... voice={voice_id}")
-
     url     = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
     headers = {"xi-api-key": API_KEY, "Content-Type": "application/json"}
     payload = {
@@ -78,113 +73,65 @@ def _elevenlabs(text: str, voice_id: str) -> bytes | None:
             "style": 0.00, "use_speaker_boost": True
         }
     }
-
     try:
         resp = requests.post(url, json=payload, headers=headers, timeout=TIMEOUT)
         if resp.status_code == 200:
-            print(f"[TTS] ✅ ElevenLabs success ({len(resp.content)} bytes)")
+            print(f"[TTS] ✅ ElevenLabs OK ({len(resp.content)} bytes)")
             return resp.content
-
-        print(f"[TTS] ElevenLabs error {resp.status_code}: {resp.text[:300]}")
-
-        if resp.status_code == 401:
-            print("[TTS] → Invalid API key")
-        elif resp.status_code == 429:
-            print("[TTS] → Quota exceeded — switching to Google TTS fallback")
-        elif resp.status_code == 422:
-            print("[TTS] → Invalid voice_id, trying fallback voice")
-            # Try with fallback voice
-            if voice_id != FALLBACK_VOICE_ID:
-                return _elevenlabs(text, FALLBACK_VOICE_ID)
-
+        print(f"[TTS] ElevenLabs {resp.status_code}: {resp.text[:200]}")
+        if resp.status_code == 422 and voice_id != FALLBACK_VOICE_ID:
+            return _elevenlabs(text, FALLBACK_VOICE_ID)
     except requests.exceptions.Timeout:
         print("[TTS] ElevenLabs timeout")
     except Exception as e:
-        print(f"[TTS] ElevenLabs exception: {e}")
-
+        print(f"[TTS] ElevenLabs error: {e}")
     return None
 
 
-# ─── GOOGLE TTS FALLBACK (FREE, UNLIMITED) ────────────────────
-
 def _gtts_fallback(text: str, lang: str = "en") -> bytes | None:
-    """
-    Free Google TTS via gTTS library.
-    Works for all 8 languages. No API key needed. No quota limit.
-    """
     try:
         from gtts import gTTS
         import io
-
-        # Map language code
         gtts_lang = GTTS_LANG_MAP.get(lang, "en")
-        print(f"[TTS] Using Google TTS fallback (lang={gtts_lang})")
-
-        tts    = gTTS(text=text, lang=gtts_lang, slow=False)
-        buf    = io.BytesIO()
+        print(f"[TTS] Using Google TTS fallback lang={gtts_lang}")
+        tts = gTTS(text=text, lang=gtts_lang, slow=False)
+        buf = io.BytesIO()
         tts.write_to_fp(buf)
-        audio  = buf.getvalue()
-
+        audio = buf.getvalue()
         if audio:
-            print(f"[TTS] ✅ Google TTS success ({len(audio)} bytes)")
+            print(f"[TTS] ✅ Google TTS OK ({len(audio)} bytes)")
             return audio
-
     except ImportError:
-        print("[TTS] gTTS not installed — run: pip install gtts")
+        print("[TTS] gTTS not installed — add gtts to requirements.txt")
     except Exception as e:
         print(f"[TTS] Google TTS error: {e}")
-
     return None
 
 
-# ─── DETECT LANGUAGE FROM TEXT ───────────────────────────────
-
-def _detect_lang_from_text(text: str) -> str:
-    """Simple heuristic to detect language for gTTS fallback."""
-    try:
-        from langdetect import detect
-        lang = detect(text)
-        mapped = GTTS_LANG_MAP.get(lang, "en")
-        print(f"[TTS] Detected language: {lang} → {mapped}")
-        return mapped
-    except Exception:
-        return "en"
-
-
-# ─── MAIN speak() FUNCTION ───────────────────────────────────
-
 def speak(text: str, voice_id: str, target_lang: str = "en") -> str:
-    """
-    Convert text to speech.
-    Tries ElevenLabs first, falls back to Google TTS automatically.
-    Returns public URL of the mp3, or '' on total failure.
-    """
     if not text or not text.strip():
         return ""
 
     _purge_old_audio()
 
-    # ── Step 1: Try ElevenLabs ────────────────────────────────
+    # Try ElevenLabs first
     audio = _elevenlabs(text, voice_id)
     if not audio and voice_id != FALLBACK_VOICE_ID:
         audio = _elevenlabs(text, FALLBACK_VOICE_ID)
 
-    # ── Step 2: Fall back to Google TTS ──────────────────────
+    # Fall back to Google TTS
     if not audio:
-        print("[TTS] ElevenLabs failed — using Google TTS fallback")
-        lang  = _detect_lang_from_text(text) if target_lang == "en" else target_lang
-        audio = _gtts_fallback(text, lang)
+        print("[TTS] ElevenLabs failed — switching to Google TTS")
+        audio = _gtts_fallback(text, target_lang)
 
-    # ── Step 3: Save and return URL ──────────────────────────
     if not audio:
-        print("[TTS] ❌ Both ElevenLabs and Google TTS failed.")
+        print("[TTS] ❌ All TTS methods failed")
         return ""
 
     return _save_audio(audio)
 
 
 def get_voices() -> list[dict]:
-    """Return available voices from ElevenLabs, or defaults."""
     if not API_KEY:
         return DEFAULT_VOICES
     try:

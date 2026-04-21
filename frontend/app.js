@@ -1,13 +1,22 @@
 /* ═══════════════════════════════════════════════
-   VoiceAI  app.js  v4.0
-   KEY FIX: Separate FROM (speech input lang) and
-            TO (translation output lang) selectors.
-   Example: Speak Hindi → Translate to Marathi ✅
+   VoiceAI  app.js  v5.0  — FINAL PRODUCTION
+   
+   KEY FEATURES:
+   ✅ Single output language selector (clean UI)
+   ✅ Auto-detects input language (Google Translate source="auto")
+   ✅ Speech recognition uses broad "auto" mode
+   ✅ Auth guard via sessionStorage
+   ✅ Email OTP registration
+   ✅ Forgot password via email code
+   ✅ Google TTS fallback if ElevenLabs quota runs out
 ═══════════════════════════════════════════════ */
 
 const API = "https://ai-voice-system-j313.onrender.com";
 
-/* ─── SESSION ────────────────────────────────────────────────*/
+/* ─── SESSION ────────────────────────────────────────────────
+   sessionStorage clears on tab close (security).
+   Survives F5 refresh within same tab.
+─────────────────────────────────────────────────────────────*/
 const S = {
   set(username, name, voice) {
     sessionStorage.setItem("va_u",  username);
@@ -24,7 +33,9 @@ const S = {
   get ok()       { return sessionStorage.getItem("va_ok") === "1"; }
 };
 
-/* ─── PAGE NAV + AUTH GUARD ──────────────────────────────────*/
+/* ─── AUTH GUARD ─────────────────────────────────────────────
+   No one can access appPage without logging in.
+─────────────────────────────────────────────────────────────*/
 function showPage(id) {
   if (id === "appPage" && !S.ok) {
     toast("Please sign in to continue.");
@@ -69,8 +80,8 @@ function setStatus(state, label) {
   rings.className = "rings-wrap " + state;
   tag.className   = "status-tag " + state;
   tag.textContent = label;
-  const icons = { listening:"", processing:"", speaking:"", ready:"" };
-  icon.textContent = icons[state] || "";
+  const icons = { listening:"🎤", processing:"⏳", speaking:"🔊", ready:"🎙️" };
+  icon.textContent = icons[state] || "🎙️";
 }
 
 /* ─── PASSWORD TOGGLE ────────────────────────────────────────*/
@@ -80,61 +91,34 @@ function togglePw(id, btn) {
   else                         { inp.type = "password"; btn.textContent = "👁"; }
 }
 
-/* ─── LANGUAGE MENUS ─────────────────────────────────────────
-   Two separate dropdowns:
-   FROM = what language you are speaking in (controls speech recognition)
-   TO   = what language to translate into (sent to backend)
+/* ─── OUTPUT LANGUAGE SELECTOR ───────────────────────────────
+   This only controls what language the OUTPUT is in.
+   Input language is auto-detected by Google Translate.
 ─────────────────────────────────────────────────────────────*/
-let _openMenu = null;
+let _langOpen = false;
 
-function toggleMenu(menuId) {
-  // Close any open menu first
-  if (_openMenu && _openMenu !== menuId) {
-    document.getElementById(_openMenu).classList.add("hidden");
-  }
-  const menu = document.getElementById(menuId);
-  const isHidden = menu.classList.contains("hidden");
-  menu.classList.toggle("hidden", !isHidden);
-  _openMenu = isHidden ? menuId : null;
+function toggleLangMenu() {
+  const menu = document.getElementById("langMenu");
+  const btn  = document.getElementById("langBtn");
+  _langOpen  = !_langOpen;
+  menu.classList.toggle("hidden", !_langOpen);
+  btn.classList.toggle("open",    _langOpen);
 }
 
-// Close menus when clicking outside
+function selectLang(code, label) {
+  document.getElementById("selLang").value        = code;
+  document.getElementById("langLabel").textContent = label;
+  document.querySelectorAll(".lang-opt").forEach(el =>
+    el.classList.toggle("active", el.getAttribute("data-label") === label)
+  );
+  if (_langOpen) toggleLangMenu();
+  toast("Output: " + label.replace(/^\S+\s*/, ""));
+}
+
 document.addEventListener("click", e => {
-  if (_openMenu) {
-    const menu = document.getElementById(_openMenu);
-    const btn  = _openMenu === "fromMenu"
-      ? document.getElementById("fromBtn")
-      : document.getElementById("toBtn");
-    if (menu && !menu.contains(e.target) && btn && !btn.contains(e.target)) {
-      menu.classList.add("hidden");
-      _openMenu = null;
-    }
-  }
+  const wrap = document.querySelector(".lang-wrap");
+  if (wrap && !wrap.contains(e.target) && _langOpen) toggleLangMenu();
 });
-
-/* FROM language — controls speech recognition lang */
-function selectFrom(speechCode, label) {
-  document.getElementById("selSpeech").value     = speechCode;
-  document.getElementById("fromLabel").textContent = label;
-  document.querySelectorAll("#fromMenu .lang-opt").forEach(el =>
-    el.classList.toggle("active", el.getAttribute("data-val") === speechCode)
-  );
-  document.getElementById("fromMenu").classList.add("hidden");
-  _openMenu = null;
-  toast("Speaking in: " + label.replace(/^\S+\s*/, ""));
-}
-
-/* TO language — what the backend translates into */
-function selectTo(code, label) {
-  document.getElementById("selLang").value     = code;
-  document.getElementById("toLabel").textContent = label;
-  document.querySelectorAll("#toMenu .lang-opt").forEach(el =>
-    el.classList.toggle("active", el.getAttribute("data-val") === code)
-  );
-  document.getElementById("toMenu").classList.add("hidden");
-  _openMenu = null;
-  toast("Translating to: " + label.replace(/^\S+\s*/, ""));
-}
 
 /* ─── LOAD VOICES ────────────────────────────────────────────*/
 async function loadVoices() {
@@ -200,7 +184,7 @@ async function login() {
   }
 }
 
-/* ─── REGISTER STEP 1 ────────────────────────────────────────*/
+/* ─── REGISTER STEP 1 — send OTP ────────────────────────────*/
 async function registerRequest() {
   const name     = document.getElementById("rName").value.trim();
   const email    = document.getElementById("rEmail").value.trim();
@@ -247,7 +231,7 @@ async function registerRequest() {
   }
 }
 
-/* ─── REGISTER STEP 2 ────────────────────────────────────────*/
+/* ─── REGISTER STEP 2 — verify OTP ──────────────────────────*/
 async function registerVerify() {
   const email = document.getElementById("rEmail").value.trim();
   const code  = document.getElementById("regOtp").value.trim().toUpperCase();
@@ -305,21 +289,22 @@ async function resendOtp() {
       body: JSON.stringify({ name, email, username, password })
     });
     const data = await res.json();
-    showMsg("rMsg2", data.success ? "✓ New code sent!" : (data.error || "Failed."),
-            data.success ? "ok" : "err");
+    showMsg("rMsg2",
+      data.success ? "✓ New code sent! Check your inbox." : (data.error || "Failed."),
+      data.success ? "ok" : "err");
   } catch {
     showMsg("rMsg2", "Connection error.", "err");
   }
 }
 
-/* ─── FORGOT PASSWORD ────────────────────────────────────────*/
+/* ─── FORGOT — SEND CODE ─────────────────────────────────────*/
 async function sendResetCode() {
   const email = document.getElementById("fEmail").value.trim();
   clearMsg("fMsg1");
   if (!email || !email.includes("@")) {
     showMsg("fMsg1", "Please enter a valid email address.", "err"); return;
   }
-  showMsg("fMsg1", "Sending reset code…", "info");
+  showMsg("fMsg1", "Sending reset code to your email…", "info");
   try {
     const res  = await fetch(API + "/forgot-password", {
       method: "POST",
@@ -330,15 +315,16 @@ async function sendResetCode() {
     if (data.success) {
       document.getElementById("fStep1").style.display = "none";
       document.getElementById("fStep2").style.display = "block";
-      showMsg("fMsg2", "✓ Code sent! Check your inbox.", "ok");
+      showMsg("fMsg2", "✓ Code sent! Check your inbox (and spam folder).", "ok");
     } else {
       showMsg("fMsg1", data.error || "Email not found.", "err");
     }
   } catch {
-    showMsg("fMsg1", "Connection error.", "err");
+    showMsg("fMsg1", "Connection error. Please try again.", "err");
   }
 }
 
+/* ─── FORGOT — RESET PASSWORD ────────────────────────────────*/
 async function resetPassword() {
   const email    = document.getElementById("fEmail").value.trim();
   const code     = document.getElementById("resetCode").value.trim().toUpperCase();
@@ -363,7 +349,7 @@ async function resetPassword() {
     });
     const data = await res.json();
     if (data.success) {
-      showMsg("fMsg2", "✓ Password reset! Redirecting…", "ok");
+      showMsg("fMsg2", "✓ Password reset! Redirecting to sign in…", "ok");
       setTimeout(() => {
         document.getElementById("fStep1").style.display = "block";
         document.getElementById("fStep2").style.display = "none";
@@ -376,7 +362,7 @@ async function resetPassword() {
       showMsg("fMsg2", data.error || "Invalid code.", "err");
     }
   } catch {
-    showMsg("fMsg2", "Connection error.", "err");
+    showMsg("fMsg2", "Connection error. Please try again.", "err");
   }
 }
 
@@ -392,13 +378,31 @@ function logout() {
   toast("Signed out successfully.");
 }
 
-/* ─── SPEECH RECOGNITION ─────────────────────────────────────*/
+/* ─── SPEECH RECOGNITION ─────────────────────────────────────
+   We use "en-US" + "hi-IN" + other langs via browser default.
+   Google Translate auto-detects the actual language anyway.
+   So speech recognition just needs to capture the words —
+   translation handles the rest automatically.
+─────────────────────────────────────────────────────────────*/
 let recognition = null;
 let _busy       = false;
 
+// Map output lang code to its speech recognition code
+// (so if user selects Hindi output, speech also recognizes Hindi better)
+const SPEECH_LANG_MAP = {
+  "1": "en-US",
+  "2": "hi-IN",
+  "3": "mr-IN",
+  "4": "ta-IN",
+  "5": "te-IN",
+  "6": "gu-IN",
+  "7": "bn-IN",
+  "8": "kn-IN",
+};
+
 (function initSR() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { console.warn("[SR] Not supported."); return; }
+  if (!SR) { console.warn("[SR] Not supported in this browser."); return; }
 
   recognition = new SR();
   recognition.continuous      = false;
@@ -412,7 +416,7 @@ let _busy       = false;
 
   recognition.onresult = event => {
     const text = event.results[0][0].transcript.trim();
-    console.log("[SR] Heard:", text);
+    console.log("[SR] Captured:", text);
     document.getElementById("transcriptText").textContent = text;
     document.getElementById("transcriptBox").classList.remove("hidden");
     document.getElementById("responseBox").classList.add("hidden");
@@ -424,8 +428,8 @@ let _busy       = false;
     setStatus("ready", "TAP TO SPEAK");
     const map = {
       "no-speech":     "No speech detected. Please try again.",
-      "audio-capture": "Microphone not found.",
-      "not-allowed":   "Microphone denied. Allow it in browser settings.",
+      "audio-capture": "Microphone not found. Check your device.",
+      "not-allowed":   "Microphone access denied. Allow it in browser settings.",
       "network":       "Network error during recognition.",
     };
     toast(map[e.error] || "Speech error: " + e.error);
@@ -448,28 +452,28 @@ function startListening() {
       orb.className.includes("speaking")) return;
 
   if (!recognition) {
-    toast("Speech recognition not supported. Use Chrome or Edge."); return;
+    toast("Speech recognition not supported. Please use Chrome or Edge."); return;
   }
 
-  // Use FROM language for speech recognition
-  const speechLang = document.getElementById("selSpeech").value || "en-US";
-  recognition.lang = speechLang;
-  console.log("[SR] Listening in:", speechLang);
+  // Set speech recognition language based on OUTPUT language selected
+  // This helps the browser's speech engine recognize the right language
+  // Google Translate will auto-detect regardless
+  const outputCode = document.getElementById("selLang").value || "1";
+  recognition.lang = SPEECH_LANG_MAP[outputCode] || "hi-IN";
+  console.log("[SR] Listening with lang:", recognition.lang);
 
   try { recognition.start(); }
-  catch(e) { setStatus("ready", "TAP TO SPEAK"); }
+  catch(e) { console.error(e); setStatus("ready", "TAP TO SPEAK"); }
 }
 
-/* ─── SEND TO BACKEND ────────────────────────────────────────*/
+/* ─── SEND VOICE TO BACKEND ──────────────────────────────────
+   Backend uses source="auto" — auto-detects input language.
+   Only output language code is sent.
+─────────────────────────────────────────────────────────────*/
 async function sendVoice(text) {
-  // TO language code — what to translate into
-  const lang     = document.getElementById("selLang").value;
+  const lang     = document.getElementById("selLang").value || "1";
   const voice    = S.voice;
   const username = S.username;
-
-  const fromLang = document.getElementById("selSpeech").value || "en-US";
-  const toLang   = document.getElementById("toLabel").textContent.replace(/^\S+\s*/, "");
-  console.log(`[Voice] "${text}" | from=${fromLang} | to lang code=${lang}`);
 
   setStatus("processing", "TRANSLATING…");
 
@@ -495,7 +499,7 @@ async function sendVoice(text) {
 
     document.getElementById("responseText").textContent = data.text;
     document.getElementById("responseMeta").textContent =
-      "🔊 Speaking in " + (data.lang_name || toLang);
+      "🔊 Speaking in " + (data.lang_name || "selected language");
     document.getElementById("responseBox").classList.remove("hidden");
 
     setStatus("speaking", "SPEAKING…");
@@ -508,13 +512,13 @@ async function sendVoice(text) {
     };
     audio.play().catch(() => {
       setStatus("ready", "TAP TO SPEAK");
-      toast("Translation done — tap to play (browser blocked autoplay).");
+      toast("Translation done — tap play (browser blocked autoplay).");
     });
 
   } catch(e) {
     console.error("[Voice]", e);
     setStatus("ready", "TAP TO SPEAK");
-    toast("Connection error. Check your internet.");
+    toast("Connection error. Please check your internet.");
   }
 }
 

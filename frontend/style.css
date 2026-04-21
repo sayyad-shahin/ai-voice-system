@@ -1,3 +1,8 @@
+/* ═══════════════════════════════════════════════════
+   VoiceAI — style.css  v2.1
+   Aesthetic: deep-space glassmorphism, refined & fast
+═══════════════════════════════════════════════════ */
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -463,41 +468,15 @@ html, body {
   .topbar { padding: 12px 16px; }
 }
 
-/* ─── FROM → TO LANGUAGE ROW ─────────────────────────────── */
-.lang-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  width: 100%;
-  margin-bottom: 8px;
-}
-.lang-box {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  flex: 1;
-}
-.lang-box-label {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-.lang-arrow {
-  font-size: 22px;
-  color: var(--blue);
-  margin-top: 18px;
-  flex-shrink: 0;
-}
-.lang-box .lang-btn {
-  width: 100%;
-  justify-content: space-between;
-  font-size: 13px;
-  padding: 9px 14px;
-}
-.lang-box .lang-menu {
-  width: 160px;
+/* ─── AUTO DETECT BADGE ──────────────────────────────────── */
+.auto-badge {
+  background: rgba(58,127,255,.08);
+  border: 1px solid rgba(58,127,255,.18);
+  border-radius: 100px;
+  padding: 7px 18px;
+  font-size: 12px;
+  color: var(--blue2);
+  text-align: center;
+  margin-bottom: 4px;
+  letter-spacing: .2px;
 }

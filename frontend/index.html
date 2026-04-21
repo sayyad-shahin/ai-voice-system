@@ -21,8 +21,8 @@
     </div>
     <h1 class="welcome-title">Voice<span class="hl">AI</span></h1>
     <p class="welcome-sub">
-      Speak in any Indian language — hear it back in any other.<br>
-      AI translation powered by ElevenLabs voice synthesis.
+      Speak in any language — hear it back in any other.<br>
+      AI auto-detects your language. Just speak naturally.
     </p>
     <div class="pill-row">
       <span class="pill">English</span><span class="pill">हिंदी</span>
@@ -81,6 +81,7 @@
       <h2>Create account</h2>
       <p>Join VoiceAI — completely free</p>
     </div>
+    <!-- Step 1 -->
     <div id="regStep1">
       <div class="field">
         <label>Full Name</label>
@@ -111,10 +112,11 @@
       <div id="rMsg1" class="msg"></div>
       <button class="btn btn-main full" id="rBtn1" onclick="registerRequest()">Send Verification Code</button>
     </div>
+    <!-- Step 2 -->
     <div id="regStep2" style="display:none">
       <div class="code-hint">
-        A 6-character code has been sent to your email.<br>
-        Check <strong>inbox and spam</strong>. Expires in 10 minutes.
+        A 6-character code was sent to your email.<br>
+        Check <strong>inbox and spam folder</strong>. Expires in 10 min.
       </div>
       <div class="field">
         <label>Verification Code</label>
@@ -124,7 +126,7 @@
                onkeydown="if(event.key==='Enter')registerVerify()">
       </div>
       <div id="rMsg2" class="msg"></div>
-      <button class="btn btn-main full" id="rBtn2" onclick="registerVerify()">Verify & Create Account</button>
+      <button class="btn btn-main full" id="rBtn2" onclick="registerVerify()">Verify &amp; Create Account</button>
       <button class="btn btn-ghost full" style="margin-top:10px" onclick="resendOtp()">Resend Code</button>
     </div>
     <p class="sub-link" style="text-align:center;margin-top:16px;">
@@ -154,12 +156,14 @@
     </div>
     <div id="fStep2" style="display:none">
       <div class="code-hint">
-        A 6-character reset code has been sent to your email.<br>
-        It expires in 10 minutes.
+        A 6-character reset code was sent to your email.<br>
+        Expires in 10 minutes.
       </div>
       <div class="field">
         <label>Reset Code</label>
-        <input id="resetCode" type="text" placeholder="ABC123" maxlength="6">
+        <input id="resetCode" type="text" placeholder="ABC123" maxlength="6"
+               style="text-transform:uppercase;letter-spacing:10px;font-size:26px;
+                      font-weight:800;text-align:center;font-family:'JetBrains Mono',monospace;">
       </div>
       <div class="field">
         <label>New Password</label>
@@ -190,63 +194,34 @@
   <!-- Top Bar -->
   <div class="topbar">
     <div class="brand">Voice<span class="hl">AI</span></div>
-    <button class="btn btn-ghost" onclick="logout()">Sign Out</button>
+    <div class="topbar-right">
+      <!-- Single selector: OUTPUT language only -->
+      <div class="lang-wrap">
+        <button class="lang-btn" id="langBtn" onclick="toggleLangMenu()">
+          <span id="langLabel">🇺🇸 English</span>
+          <span class="caret">▾</span>
+        </button>
+        <div id="langMenu" class="lang-menu hidden">
+          <div class="lang-opt active" data-label="🇺🇸 English"  onclick="selectLang('1','🇺🇸 English')">🇺🇸 English</div>
+          <div class="lang-opt"        data-label="🇮🇳 Hindi"    onclick="selectLang('2','🇮🇳 Hindi')">🇮🇳 Hindi</div>
+          <div class="lang-opt"        data-label="🇮🇳 Marathi"  onclick="selectLang('3','🇮🇳 Marathi')">🇮🇳 Marathi</div>
+          <div class="lang-opt"        data-label="🇮🇳 Tamil"    onclick="selectLang('4','🇮🇳 Tamil')">🇮🇳 Tamil</div>
+          <div class="lang-opt"        data-label="🇮🇳 Telugu"   onclick="selectLang('5','🇮🇳 Telugu')">🇮🇳 Telugu</div>
+          <div class="lang-opt"        data-label="🇮🇳 Gujarati" onclick="selectLang('6','🇮🇳 Gujarati')">🇮🇳 Gujarati</div>
+          <div class="lang-opt"        data-label="🇧🇩 Bengali"  onclick="selectLang('7','🇧🇩 Bengali')">🇧🇩 Bengali</div>
+          <div class="lang-opt"        data-label="🇮🇳 Kannada"  onclick="selectLang('8','🇮🇳 Kannada')">🇮🇳 Kannada</div>
+        </div>
+      </div>
+      <button class="btn btn-ghost" onclick="logout()">Sign Out</button>
+    </div>
   </div>
 
   <!-- Voice Interface -->
   <div class="voice-view">
     <div class="voice-center">
 
-      <!-- ═══ LANGUAGE SELECTOR ROW ═══ -->
-      <div class="lang-row">
-
-        <!-- FROM: I am speaking in -->
-        <div class="lang-box">
-          <div class="lang-box-label">I'm speaking in</div>
-          <div class="lang-wrap">
-            <button class="lang-btn" id="fromBtn" onclick="toggleMenu('fromMenu')">
-              <span id="fromLabel">🇺🇸 English</span>
-              <span class="caret">▾</span>
-            </button>
-            <div id="fromMenu" class="lang-menu hidden">
-              <div class="lang-opt active" data-val="en-US"  onclick="selectFrom('en-US','🇺🇸 English')">🇺🇸 English</div>
-              <div class="lang-opt"        data-val="hi-IN"  onclick="selectFrom('hi-IN','🇮🇳 Hindi')">🇮🇳 Hindi</div>
-              <div class="lang-opt"        data-val="mr-IN"  onclick="selectFrom('mr-IN','🇮🇳 Marathi')">🇮🇳 Marathi</div>
-              <div class="lang-opt"        data-val="ta-IN"  onclick="selectFrom('ta-IN','🇮🇳 Tamil')">🇮🇳 Tamil</div>
-              <div class="lang-opt"        data-val="te-IN"  onclick="selectFrom('te-IN','🇮🇳 Telugu')">🇮🇳 Telugu</div>
-              <div class="lang-opt"        data-val="gu-IN"  onclick="selectFrom('gu-IN','🇮🇳 Gujarati')">🇮🇳 Gujarati</div>
-              <div class="lang-opt"        data-val="bn-BD"  onclick="selectFrom('bn-BD','🇧🇩 Bengali')">🇧🇩 Bengali</div>
-              <div class="lang-opt"        data-val="kn-IN"  onclick="selectFrom('kn-IN','🇮🇳 Kannada')">🇮🇳 Kannada</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Arrow -->
-        <div class="lang-arrow">→</div>
-
-        <!-- TO: Translate to -->
-        <div class="lang-box">
-          <div class="lang-box-label">Translate to</div>
-          <div class="lang-wrap">
-            <button class="lang-btn" id="toBtn" onclick="toggleMenu('toMenu')">
-              <span id="toLabel">🇮🇳 Hindi</span>
-              <span class="caret">▾</span>
-            </button>
-            <div id="toMenu" class="lang-menu hidden">
-              <div class="lang-opt"        data-val="1"  onclick="selectTo('1','🇺🇸 English')">🇺🇸 English</div>
-              <div class="lang-opt active" data-val="2"  onclick="selectTo('2','🇮🇳 Hindi')">🇮🇳 Hindi</div>
-              <div class="lang-opt"        data-val="3"  onclick="selectTo('3','🇮🇳 Marathi')">🇮🇳 Marathi</div>
-              <div class="lang-opt"        data-val="4"  onclick="selectTo('4','🇮🇳 Tamil')">🇮🇳 Tamil</div>
-              <div class="lang-opt"        data-val="5"  onclick="selectTo('5','🇮🇳 Telugu')">🇮🇳 Telugu</div>
-              <div class="lang-opt"        data-val="6"  onclick="selectTo('6','🇮🇳 Gujarati')">🇮🇳 Gujarati</div>
-              <div class="lang-opt"        data-val="7"  onclick="selectTo('7','🇧🇩 Bengali')">🇧🇩 Bengali</div>
-              <div class="lang-opt"        data-val="8"  onclick="selectTo('8','🇮🇳 Kannada')">🇮🇳 Kannada</div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-      <!-- ═══════════════════════════ -->
+      <!-- Auto detect badge -->
+      <div class="auto-badge">🤖 Auto-detects your language — just speak!</div>
 
       <!-- Orb + Rings -->
       <div class="orb-shell">
@@ -257,7 +232,7 @@
         </div>
         <div class="orb" id="orb" onclick="startListening()">
           <div class="orb-inner">
-            <div class="orb-icon" id="orbIcon"></div>
+            <div class="orb-icon" id="orbIcon">🎙️</div>
           </div>
         </div>
       </div>
@@ -270,7 +245,7 @@
         <div class="box-txt" id="transcriptText"></div>
       </div>
 
-      <!-- Translation output -->
+      <!-- Translation -->
       <div class="info-box resp-box hidden" id="responseBox">
         <div class="box-lbl">Translation</div>
         <div class="box-txt" id="responseText"></div>
@@ -280,9 +255,7 @@
     </div>
   </div>
 
-  <!-- Hidden state -->
-  <input type="hidden" id="selLang"   value="2">
-  <input type="hidden" id="selSpeech" value="en-US">
+  <input type="hidden" id="selLang" value="1">
 </div>
 
 <!-- TOAST -->
