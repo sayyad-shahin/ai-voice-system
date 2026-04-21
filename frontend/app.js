@@ -1,14 +1,19 @@
+/* ═══════════════════════════════════════════════
+   VoiceAI  app.js  v2.1
+   Backend: https://ai-voice-system-j313.onrender.com
+═══════════════════════════════════════════════ */
+
 const API = "https://ai-voice-system-j313.onrender.com";
 
-/* ─── SESSION ────────────────────────────────────────────────
-   Uses sessionStorage — clears when browser tab is closed.
-   Survives F5 page refresh within same tab.
-─────────────────────────────────────────────────────────────*/
+/* ───────────────────────────────────────────
+   SESSION  (sessionStorage — clears on tab close,
+   survives F5 refresh within same tab)
+─────────────────────────────────────────── */
 const S = {
   set(username, name, voice) {
-    sessionStorage.setItem("va_u",  username);
-    sessionStorage.setItem("va_n",  name || username);
-    sessionStorage.setItem("va_v",  voice || "EXAVITQu4vr4xnSDxMaL");
+    sessionStorage.setItem("va_u", username);
+    sessionStorage.setItem("va_n", name || username);
+    sessionStorage.setItem("va_v", voice || "EXAVITQu4vr4xnSDxMaL");
     sessionStorage.setItem("va_ok", "1");
   },
   clear() {
@@ -20,9 +25,9 @@ const S = {
   get ok()       { return sessionStorage.getItem("va_ok") === "1"; }
 };
 
-/* ─── PAGE NAV ───────────────────────────────────────────────
-   Auth guard: appPage is blocked unless logged in.
-─────────────────────────────────────────────────────────────*/
+/* ───────────────────────────────────────────
+   PAGE NAV  — auth guard enforced
+─────────────────────────────────────────── */
 function showPage(id) {
   if (id === "appPage" && !S.ok) {
     toast("Please sign in to continue.");
@@ -32,7 +37,9 @@ function showPage(id) {
   document.getElementById(id).classList.add("active");
 }
 
-/* ─── TOAST ──────────────────────────────────────────────────*/
+/* ───────────────────────────────────────────
+   TOAST
+─────────────────────────────────────────── */
 let _tt;
 function toast(msg, ms = 3400) {
   const el = document.getElementById("toast");
@@ -42,44 +49,50 @@ function toast(msg, ms = 3400) {
   _tt = setTimeout(() => el.classList.add("hidden"), ms);
 }
 
-/* ─── INLINE MESSAGES ────────────────────────────────────────*/
+/* ───────────────────────────────────────────
+   INLINE MESSAGES
+─────────────────────────────────────────── */
 function showMsg(id, text, type) {
   const el = document.getElementById(id);
-  if (!el) return;
   el.textContent = text;
-  el.className   = "msg show " + type;
+  el.className = "msg show " + type;
 }
 function clearMsg(id) {
   const el = document.getElementById(id);
-  if (!el) return;
   el.textContent = "";
-  el.className   = "msg";
+  el.className = "msg";
 }
 
-/* ─── ORB / STATUS ───────────────────────────────────────────*/
+/* ───────────────────────────────────────────
+   ORB / STATUS
+─────────────────────────────────────────── */
 function setStatus(state, label) {
   const orb   = document.getElementById("orb");
   const rings = document.getElementById("rings");
   const tag   = document.getElementById("statusTag");
   const icon  = document.getElementById("orbIcon");
 
-  orb.className   = "orb "        + state;
+  orb.className   = "orb " + state;
   rings.className = "rings-wrap " + state;
   tag.className   = "status-tag " + state;
   tag.textContent = label;
 
-  const icons = { listening:"", processing:"⏳", speaking:"", ready:"" };
-  icon.textContent = icons[state] || "";
+  const icons = { listening:"🎤", processing:"⏳", speaking:"🔊", ready:"🎙️" };
+  icon.textContent = icons[state] || "🎙️";
 }
 
-/* ─── PASSWORD TOGGLE ────────────────────────────────────────*/
-function togglePw(id, btn) {
-  const inp = document.getElementById(id);
+/* ───────────────────────────────────────────
+   PASSWORD TOGGLE
+─────────────────────────────────────────── */
+function togglePw(inputId, btn) {
+  const inp = document.getElementById(inputId);
   if (inp.type === "password") { inp.type = "text";     btn.textContent = "🙈"; }
   else                         { inp.type = "password"; btn.textContent = "👁"; }
 }
 
-/* ─── LANGUAGE SELECTOR ──────────────────────────────────────*/
+/* ───────────────────────────────────────────
+   LANGUAGE SELECTOR
+─────────────────────────────────────────── */
 let _langOpen = false;
 
 function toggleLangMenu() {
@@ -87,7 +100,7 @@ function toggleLangMenu() {
   const btn  = document.getElementById("langBtn");
   _langOpen  = !_langOpen;
   menu.classList.toggle("hidden", !_langOpen);
-  btn.classList.toggle("open",    _langOpen);
+  btn.classList.toggle("open", _langOpen);
 }
 
 function selectLang(code, label, speechCode) {
@@ -106,7 +119,9 @@ document.addEventListener("click", e => {
   if (wrap && !wrap.contains(e.target) && _langOpen) toggleLangMenu();
 });
 
-/* ─── LOAD VOICES ────────────────────────────────────────────*/
+/* ───────────────────────────────────────────
+   LOAD VOICES
+─────────────────────────────────────────── */
 async function loadVoices() {
   const sel = document.getElementById("voiceSelect");
   try {
@@ -115,9 +130,9 @@ async function loadVoices() {
     sel.innerHTML = "";
     const list = (data.success && data.voices?.length) ? data.voices : [
       { id: "EXAVITQu4vr4xnSDxMaL", name: "Rachel" },
-      { id: "21m00Tcm4TlvDq8ikWAM", name: "Bella"  },
-      { id: "TxGEqnHWrfWFTfGW9XjX", name: "Josh"   },
-      { id: "pNInz6obpgDQGcFmaJgB", name: "Adam"   },
+      { id: "21m00Tcm4TlvDq8ikWAM", name: "Bella" },
+      { id: "TxGEqnHWrfWFTfGW9XjX", name: "Josh" },
+      { id: "pNInz6obpgDQGcFmaJgB", name: "Adam" },
     ];
     list.forEach(v => {
       const o = document.createElement("option");
@@ -129,7 +144,9 @@ async function loadVoices() {
   }
 }
 
-/* ─── LOGIN ──────────────────────────────────────────────────*/
+/* ───────────────────────────────────────────
+   LOGIN
+─────────────────────────────────────────── */
 async function login() {
   const username = document.getElementById("lUser").value.trim();
   const password = document.getElementById("lPass").value;
@@ -164,40 +181,41 @@ async function login() {
       btn.disabled = false; btn.textContent = "Sign In";
     }
   } catch {
-    showMsg("lMsg", "Connection error. Check your internet.", "err");
+    showMsg("lMsg", "Connection error. Please check your internet.", "err");
     btn.disabled = false; btn.textContent = "Sign In";
   }
 }
 
-/* ─── REGISTER STEP 1 — send OTP ────────────────────────────*/
-async function registerRequest() {
+/* ───────────────────────────────────────────
+   REGISTER
+─────────────────────────────────────────── */
+async function register() {
   const name     = document.getElementById("rName").value.trim();
   const email    = document.getElementById("rEmail").value.trim();
   const username = document.getElementById("rUser").value.trim();
   const password = document.getElementById("rPass").value;
   const confirm  = document.getElementById("rConf").value;
-  const btn      = document.getElementById("rBtn1");
+  const btn      = document.getElementById("rBtn");
 
-  clearMsg("rMsg1");
-
+  clearMsg("rMsg");
   if (!name || !email || !username || !password || !confirm) {
-    showMsg("rMsg1", "Please fill in all fields.", "err"); return;
+    showMsg("rMsg", "Please fill in all fields.", "err"); return;
   }
   if (!email.includes("@") || !email.includes(".")) {
-    showMsg("rMsg1", "Please enter a valid email address.", "err"); return;
+    showMsg("rMsg", "Please enter a valid email address.", "err"); return;
   }
   if (password.length < 6) {
-    showMsg("rMsg1", "Password must be at least 6 characters.", "err"); return;
+    showMsg("rMsg", "Password must be at least 6 characters.", "err"); return;
   }
   if (password !== confirm) {
-    showMsg("rMsg1", "Passwords do not match.", "err"); return;
+    showMsg("rMsg", "Passwords do not match. Please re-enter.", "err"); return;
   }
 
-  btn.disabled = true; btn.textContent = "Sending code…";
-  showMsg("rMsg1", "Sending verification code to your email…", "info");
+  btn.disabled = true; btn.textContent = "Creating…";
+  showMsg("rMsg", "Creating your account…", "info");
 
   try {
-    const res  = await fetch(API + "/register/request", {
+    const res  = await fetch(API + "/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, email, username, password })
@@ -205,93 +223,24 @@ async function registerRequest() {
     const data = await res.json();
 
     if (data.success) {
-      // Move to Step 2
-      document.getElementById("regStep1").style.display = "none";
-      document.getElementById("regStep2").style.display = "block";
-      showMsg("rMsg2", "✓ Code sent! Check your inbox (and spam folder).", "ok");
-    } else {
-      showMsg("rMsg1", data.error || "Failed to send code.", "err");
-    }
-  } catch {
-    showMsg("rMsg1", "Connection error. Please try again.", "err");
-  } finally {
-    btn.disabled = false; btn.textContent = "Send Verification Code";
-  }
-}
-
-/* ─── REGISTER STEP 2 — verify OTP ──────────────────────────*/
-async function registerVerify() {
-  const email = document.getElementById("rEmail").value.trim();
-  const code  = document.getElementById("regOtp").value.trim().toUpperCase();
-  const btn   = document.getElementById("rBtn2");
-
-  clearMsg("rMsg2");
-
-  if (!code || code.length < 4) {
-    showMsg("rMsg2", "Please enter the verification code.", "err"); return;
-  }
-
-  btn.disabled = true; btn.textContent = "Verifying…";
-  showMsg("rMsg2", "Verifying your code…", "info");
-
-  try {
-    const res  = await fetch(API + "/register/verify", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, code })
-    });
-    const data = await res.json();
-
-    if (data.success) {
-      showMsg("rMsg2", "✓ Account created! Redirecting to sign in…", "ok");
+      showMsg("rMsg", "✓ Account created! Redirecting to sign in…", "ok");
       setTimeout(() => {
-        // Reset register form fully
-        document.getElementById("regStep1").style.display = "block";
-        document.getElementById("regStep2").style.display = "none";
-        ["rName","rEmail","rUser","rPass","rConf","regOtp"].forEach(id => {
-          const el = document.getElementById(id);
-          if (el) el.value = "";
-        });
-        clearMsg("rMsg1"); clearMsg("rMsg2");
-        btn.disabled = false; btn.textContent = "Verify & Create Account";
+        btn.disabled = false; btn.textContent = "Create Account";
         showPage("loginPage");
-      }, 1500);
+      }, 1400);
     } else {
-      showMsg("rMsg2", data.error || "Verification failed.", "err");
-      btn.disabled = false; btn.textContent = "Verify & Create Account";
+      showMsg("rMsg", data.error || "Registration failed.", "err");
+      btn.disabled = false; btn.textContent = "Create Account";
     }
   } catch {
-    showMsg("rMsg2", "Connection error. Please try again.", "err");
-    btn.disabled = false; btn.textContent = "Verify & Create Account";
+    showMsg("rMsg", "Connection error. Please try again.", "err");
+    btn.disabled = false; btn.textContent = "Create Account";
   }
 }
 
-/* ─── REGISTER — RESEND OTP ──────────────────────────────────*/
-async function resendOtp() {
-  const name     = document.getElementById("rName").value.trim();
-  const email    = document.getElementById("rEmail").value.trim();
-  const username = document.getElementById("rUser").value.trim();
-  const password = document.getElementById("rPass").value;
-
-  showMsg("rMsg2", "Resending code…", "info");
-  try {
-    const res  = await fetch(API + "/register/request", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, username, password })
-    });
-    const data = await res.json();
-    if (data.success) {
-      showMsg("rMsg2", "✓ New code sent! Check your inbox.", "ok");
-    } else {
-      showMsg("rMsg2", data.error || "Failed to resend.", "err");
-    }
-  } catch {
-    showMsg("rMsg2", "Connection error.", "err");
-  }
-}
-
-/* ─── FORGOT PASSWORD — SEND CODE ────────────────────────────*/
+/* ───────────────────────────────────────────
+   FORGOT — SEND CODE
+─────────────────────────────────────────── */
 async function sendResetCode() {
   const email = document.getElementById("fEmail").value.trim();
   clearMsg("fMsg1");
@@ -300,7 +249,7 @@ async function sendResetCode() {
     showMsg("fMsg1", "Please enter a valid email address.", "err"); return;
   }
 
-  showMsg("fMsg1", "Sending reset code to your email…", "info");
+  showMsg("fMsg1", "Sending verification code to your email…", "info");
 
   try {
     const res  = await fetch(API + "/forgot-password", {
@@ -322,7 +271,9 @@ async function sendResetCode() {
   }
 }
 
-/* ─── FORGOT PASSWORD — RESET ────────────────────────────────*/
+/* ───────────────────────────────────────────
+   FORGOT — RESET PASSWORD
+─────────────────────────────────────────── */
 async function resetPassword() {
   const email    = document.getElementById("fEmail").value.trim();
   const code     = document.getElementById("resetCode").value.trim().toUpperCase();
@@ -330,9 +281,8 @@ async function resetPassword() {
   const confirm  = document.getElementById("newPwConf").value;
 
   clearMsg("fMsg2");
-
   if (!code || code.length < 5) {
-    showMsg("fMsg2", "Please enter the full reset code.", "err"); return;
+    showMsg("fMsg2", "Please enter the full verification code.", "err"); return;
   }
   if (!password || password.length < 6) {
     showMsg("fMsg2", "Password must be at least 6 characters.", "err"); return;
@@ -369,7 +319,9 @@ async function resetPassword() {
   }
 }
 
-/* ─── LOGOUT ─────────────────────────────────────────────────*/
+/* ───────────────────────────────────────────
+   LOGOUT
+─────────────────────────────────────────── */
 function logout() {
   S.clear();
   setStatus("ready", "TAP TO SPEAK");
@@ -379,20 +331,25 @@ function logout() {
   toast("Signed out successfully.");
 }
 
-/* ─── SPEECH RECOGNITION ─────────────────────────────────────*/
+/* ───────────────────────────────────────────
+   SPEECH RECOGNITION
+─────────────────────────────────────────── */
 let recognition = null;
-let _busy       = false;
+let _busy = false;
 
 (function initSR() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { console.warn("[SR] Not supported."); return; }
+  if (!SR) { console.warn("[SR] Not supported in this browser."); return; }
 
   recognition = new SR();
-  recognition.continuous      = false;
-  recognition.interimResults  = false;
+  recognition.continuous     = false;
+  recognition.interimResults = false;
   recognition.maxAlternatives = 1;
 
-  recognition.onstart = () => { _busy = true; setStatus("listening", "LISTENING…"); };
+  recognition.onstart = () => {
+    _busy = true;
+    setStatus("listening", "LISTENING…");
+  };
 
   recognition.onresult = event => {
     const text = event.results[0][0].transcript.trim();
@@ -406,18 +363,19 @@ let _busy       = false;
     _busy = false;
     setStatus("ready", "TAP TO SPEAK");
     const map = {
-      "no-speech":     "No speech detected. Please try again.",
-      "audio-capture": "Microphone not found.",
-      "not-allowed":   "Microphone access denied. Allow it in browser settings.",
-      "network":       "Network error during recognition.",
+      "no-speech":           "No speech detected. Please try again.",
+      "audio-capture":       "Microphone not found. Check your device.",
+      "not-allowed":         "Microphone access denied. Allow it in browser settings.",
+      "network":             "Network error during recognition.",
+      "service-not-allowed": "Speech service not allowed here.",
     };
     toast(map[e.error] || "Speech error: " + e.error);
   };
 
   recognition.onend = () => {
     _busy = false;
-    if (document.getElementById("orb").className.includes("listening"))
-      setStatus("processing", "PROCESSING…");
+    const state = document.getElementById("orb").className;
+    if (state.includes("listening")) setStatus("processing", "PROCESSING…");
   };
 })();
 
@@ -425,15 +383,20 @@ function startListening() {
   if (_busy) return;
   const cls = document.getElementById("orb").className;
   if (cls.includes("listening") || cls.includes("processing") || cls.includes("speaking")) return;
+
   if (!recognition) {
-    toast("Speech recognition not supported. Use Chrome or Edge."); return;
+    toast("Speech recognition is not supported. Please use Chrome or Edge.");
+    return;
   }
+
   recognition.lang = document.getElementById("selSpeech").value || "en-US";
   try { recognition.start(); }
-  catch(e) { setStatus("ready", "TAP TO SPEAK"); }
+  catch (e) { setStatus("ready", "TAP TO SPEAK"); }
 }
 
-/* ─── SEND TO BACKEND ────────────────────────────────────────*/
+/* ───────────────────────────────────────────
+   SEND TO BACKEND
+─────────────────────────────────────────── */
 async function sendVoice(text) {
   const lang     = document.getElementById("selLang").value;
   const voice    = S.voice;
@@ -449,21 +412,23 @@ async function sendVoice(text) {
     });
 
     if (!res.ok) {
-      let errMsg = "Server error (" + res.status + ").";
+      let errMsg = "Server error (" + res.status + "). Please try again.";
       try { const d = await res.json(); if (d.error) errMsg = d.error; } catch {}
-      setStatus("ready", "TAP TO SPEAK"); toast(errMsg); return;
+      setStatus("ready", "TAP TO SPEAK");
+      toast(errMsg);
+      return;
     }
 
     const data = await res.json();
 
     if (!data.success) {
       setStatus("ready", "TAP TO SPEAK");
-      toast(data.error || "Something went wrong."); return;
+      toast(data.error || "Something went wrong. Please try again.");
+      return;
     }
 
     document.getElementById("responseText").textContent = data.text;
-    document.getElementById("responseMeta").textContent =
-      "🔊 Speaking in " + (data.lang_name || "selected language");
+    document.getElementById("responseMeta").textContent = "🔊 Speaking in " + (data.lang_name || "selected language");
     document.getElementById("responseBox").classList.remove("hidden");
 
     setStatus("speaking", "SPEAKING…");
@@ -479,17 +444,18 @@ async function sendVoice(text) {
       toast("Translation done — tap to play (browser blocked autoplay).");
     });
 
-  } catch(e) {
+  } catch (e) {
     console.error("[Voice]", e);
     setStatus("ready", "TAP TO SPEAK");
-    toast("Connection error. Please check your internet.");
+    toast("Connection error. Please check your internet and try again.");
   }
 }
 
-/* ─── INIT ───────────────────────────────────────────────────*/
+/* ───────────────────────────────────────────
+   INIT
+─────────────────────────────────────────── */
 window.addEventListener("load", () => {
   loadVoices();
-  // Restore session if returning to same tab after F5
-  // New tab or closed browser → always welcome page (S.ok is false)
+  // Restore session if returning within same tab
   showPage(S.ok ? "appPage" : "welcomePage");
 });

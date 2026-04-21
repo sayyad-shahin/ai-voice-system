@@ -17,7 +17,9 @@
   </div>
   <div class="welcome-wrap">
     <div class="logo-ring-wrap">
-      <div class="lr1"></div><div class="lr2"></div><div class="lcore"></div>
+      <div class="lr1"></div>
+      <div class="lr2"></div>
+      <div class="lcore"></div>
     </div>
     <h1 class="welcome-title">Voice<span class="hl">AI</span></h1>
     <p class="welcome-sub">
@@ -25,10 +27,14 @@
       AI translation powered by ElevenLabs voice synthesis.
     </p>
     <div class="pill-row">
-      <span class="pill">English</span><span class="pill">हिंदी</span>
-      <span class="pill">मराठी</span><span class="pill">தமிழ்</span>
-      <span class="pill">తెలుగు</span><span class="pill">ગુજરાતી</span>
-      <span class="pill">বাংলা</span><span class="pill">ಕನ್ನಡ</span>
+      <span class="pill">English</span>
+      <span class="pill">हिंदी</span>
+      <span class="pill">मराठी</span>
+      <span class="pill">தமிழ்</span>
+      <span class="pill">తెలుగు</span>
+      <span class="pill">ગુજરાતી</span>
+      <span class="pill">বাংলা</span>
+      <span class="pill">ಕನ್ನಡ</span>
     </div>
     <button class="btn btn-main" onclick="showPage('loginPage')">Get Started</button>
     <p class="sub-link">New here? <a href="#" onclick="showPage('registerPage')">Create a free account</a></p>
@@ -37,7 +43,9 @@
 
 <!-- ══════════ LOGIN ══════════ -->
 <div id="loginPage" class="page">
-  <div class="ambient"><div class="amb a1"></div><div class="amb a2"></div></div>
+  <div class="ambient">
+    <div class="amb a1"></div><div class="amb a2"></div>
+  </div>
   <div class="card">
     <button class="back-btn" onclick="showPage('welcomePage')">← Back</button>
     <div class="card-head">
@@ -73,7 +81,9 @@
 
 <!-- ══════════ REGISTER ══════════ -->
 <div id="registerPage" class="page">
-  <div class="ambient"><div class="amb a1"></div><div class="amb a2"></div></div>
+  <div class="ambient">
+    <div class="amb a1"></div><div class="amb a2"></div>
+  </div>
   <div class="card">
     <button class="back-btn" onclick="showPage('loginPage')">← Back</button>
     <div class="card-head">
@@ -81,62 +91,34 @@
       <h2>Create account</h2>
       <p>Join VoiceAI — completely free</p>
     </div>
-
-    <!-- Step 1: Fill details -->
-    <div id="regStep1">
-      <div class="field">
-        <label>Full Name</label>
-        <input id="rName" type="text" placeholder="Your full name">
-      </div>
-      <div class="field">
-        <label>Email</label>
-        <input id="rEmail" type="email" placeholder="your@email.com">
-      </div>
-      <div class="field">
-        <label>Username</label>
-        <input id="rUser" type="text" placeholder="Min. 3 chars (letters, numbers, _ .)">
-      </div>
-      <div class="field">
-        <label>Password</label>
-        <div class="pw-row">
-          <input id="rPass" type="password" placeholder="Minimum 6 characters">
-          <button class="eye-btn" type="button" onclick="togglePw('rPass',this)">👁</button>
-        </div>
-      </div>
-      <div class="field">
-        <label>Confirm Password</label>
-        <div class="pw-row">
-          <input id="rConf" type="password" placeholder="Repeat your password">
-          <button class="eye-btn" type="button" onclick="togglePw('rConf',this)">👁</button>
-        </div>
-      </div>
-      <div id="rMsg1" class="msg"></div>
-      <button class="btn btn-main full" id="rBtn1" onclick="registerRequest()">
-        Send Verification Code
-      </button>
+    <div class="field">
+      <label>Full Name</label>
+      <input id="rName" type="text" placeholder="Your full name">
     </div>
-
-    <!-- Step 2: Enter OTP -->
-    <div id="regStep2" style="display:none">
-      <div class="code-hint">
-        A 6-character verification code has been sent to your email.<br>
-        Check your <strong>inbox and spam folder</strong>. It expires in 10 minutes.
-      </div>
-      <div class="field">
-        <label>Verification Code</label>
-        <input id="regOtp" type="text" placeholder="ABC123" maxlength="6"
-               style="text-transform:uppercase;letter-spacing:10px;font-size:26px;
-                      font-weight:800;text-align:center;font-family:'JetBrains Mono',monospace;"
-               onkeydown="if(event.key==='Enter')registerVerify()">
-      </div>
-      <div id="rMsg2" class="msg"></div>
-      <button class="btn btn-main full" id="rBtn2" onclick="registerVerify()">
-        Verify & Create Account
-      </button>
-      <button class="btn btn-ghost full" style="margin-top:10px"
-              onclick="resendOtp()">Resend Code</button>
+    <div class="field">
+      <label>Email</label>
+      <input id="rEmail" type="email" placeholder="your@email.com">
     </div>
-
+    <div class="field">
+      <label>Username</label>
+      <input id="rUser" type="text" placeholder="Choose a username (min. 3 chars)">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <div class="pw-row">
+        <input id="rPass" type="password" placeholder="Minimum 6 characters">
+        <button class="eye-btn" type="button" onclick="togglePw('rPass',this)">👁</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>Confirm Password</label>
+      <div class="pw-row">
+        <input id="rConf" type="password" placeholder="Repeat your password">
+        <button class="eye-btn" type="button" onclick="togglePw('rConf',this)">👁</button>
+      </div>
+    </div>
+    <div id="rMsg" class="msg"></div>
+    <button class="btn btn-main full" id="rBtn" onclick="register()">Create Account</button>
     <p class="sub-link" style="text-align:center;margin-top:16px;">
       Already have an account? <a href="#" onclick="showPage('loginPage')">Sign in</a>
     </p>
@@ -145,16 +127,18 @@
 
 <!-- ══════════ FORGOT PASSWORD ══════════ -->
 <div id="forgotPage" class="page">
-  <div class="ambient"><div class="amb a1"></div><div class="amb a2"></div></div>
+  <div class="ambient">
+    <div class="amb a1"></div><div class="amb a2"></div>
+  </div>
   <div class="card">
     <button class="back-btn" onclick="showPage('loginPage')">← Back</button>
     <div class="card-head">
       <div class="card-icon">🔐</div>
       <h2>Reset Password</h2>
-      <p>Enter your email to receive a reset code</p>
+      <p>Enter your email to receive a code</p>
     </div>
 
-    <!-- Step 1: email -->
+    <!-- Step 1 -->
     <div id="fStep1">
       <div class="field">
         <label>Email Address</label>
@@ -162,17 +146,17 @@
                onkeydown="if(event.key==='Enter')sendResetCode()">
       </div>
       <div id="fMsg1" class="msg"></div>
-      <button class="btn btn-main full" onclick="sendResetCode()">Send Reset Code</button>
+      <button class="btn btn-main full" onclick="sendResetCode()">Send Verification Code</button>
     </div>
 
-    <!-- Step 2: code + new password -->
+    <!-- Step 2 -->
     <div id="fStep2" style="display:none">
       <div class="code-hint">
-        A 6-character reset code has been sent to your email.<br>
+        A 6-character code has been sent to your email.<br>
         It expires in 10 minutes.
       </div>
       <div class="field">
-        <label>Reset Code</label>
+        <label>Verification Code</label>
         <input id="resetCode" type="text" placeholder="ABC123" maxlength="6">
       </div>
       <div class="field">
@@ -201,6 +185,7 @@
     <div class="amb a1"></div><div class="amb a2"></div><div class="amb a3"></div>
   </div>
 
+  <!-- Top Bar -->
   <div class="topbar">
     <div class="brand">Voice<span class="hl">AI</span></div>
     <div class="topbar-right">
@@ -224,8 +209,10 @@
     </div>
   </div>
 
+  <!-- Voice Interface -->
   <div class="voice-view">
     <div class="voice-center">
+
       <div class="orb-shell">
         <div class="rings-wrap" id="rings">
           <div class="ring r1"></div>
@@ -234,7 +221,7 @@
         </div>
         <div class="orb" id="orb" onclick="startListening()">
           <div class="orb-inner">
-            <div class="orb-icon" id="orbIcon"></div>
+            <div class="orb-icon" id="orbIcon">🎙️</div>
           </div>
         </div>
       </div>
@@ -251,9 +238,11 @@
         <div class="box-txt" id="responseText"></div>
         <div class="box-meta" id="responseMeta"></div>
       </div>
+
     </div>
   </div>
 
+  <!-- Hidden state inputs -->
   <input type="hidden" id="selLang"   value="1">
   <input type="hidden" id="selSpeech" value="en-US">
 </div>

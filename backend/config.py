@@ -2,7 +2,13 @@ import sqlite3
 import os
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH  = os.path.join(BASE_DIR, "database", "voiceai.db")
+
+# Use RENDER_DB_PATH env var if set (for Render Disk), else use local folder
+DB_PATH = os.getenv(
+    "RENDER_DB_PATH",
+    os.path.join(BASE_DIR, "database", "voiceai.db")
+)
+
 os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
 
@@ -51,4 +57,4 @@ def init_tables():
     """)
     db.commit()
     db.close()
-    print("[DB] Tables ready.")
+    print(f"[DB] Tables ready at: {DB_PATH}")
