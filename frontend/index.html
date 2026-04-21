@@ -12,9 +12,7 @@
 
 <!-- ══════════ WELCOME ══════════ -->
 <div id="welcomePage" class="page active">
-  <div class="ambient">
-    <div class="amb a1"></div><div class="amb a2"></div><div class="amb a3"></div>
-  </div>
+  <div class="ambient"><div class="amb a1"></div><div class="amb a2"></div><div class="amb a3"></div></div>
   <div class="welcome-wrap">
     <div class="logo-ring-wrap">
       <div class="lr1"></div><div class="lr2"></div><div class="lcore"></div>
@@ -81,45 +79,32 @@
       <h2>Create account</h2>
       <p>Join VoiceAI — completely free</p>
     </div>
-    <!-- Step 1 -->
     <div id="regStep1">
-      <div class="field">
-        <label>Full Name</label>
-        <input id="rName" type="text" placeholder="Your full name">
-      </div>
-      <div class="field">
-        <label>Email</label>
-        <input id="rEmail" type="email" placeholder="your@email.com">
-      </div>
-      <div class="field">
-        <label>Username</label>
-        <input id="rUser" type="text" placeholder="Min. 3 chars (letters, numbers, _ .)">
-      </div>
-      <div class="field">
-        <label>Password</label>
+      <div class="field"><label>Full Name</label>
+        <input id="rName" type="text" placeholder="Your full name"></div>
+      <div class="field"><label>Email</label>
+        <input id="rEmail" type="email" placeholder="your@email.com"></div>
+      <div class="field"><label>Username</label>
+        <input id="rUser" type="text" placeholder="Min. 3 chars (letters, numbers, _ .)"></div>
+      <div class="field"><label>Password</label>
         <div class="pw-row">
           <input id="rPass" type="password" placeholder="Minimum 6 characters">
           <button class="eye-btn" type="button" onclick="togglePw('rPass',this)">👁</button>
-        </div>
-      </div>
-      <div class="field">
-        <label>Confirm Password</label>
+        </div></div>
+      <div class="field"><label>Confirm Password</label>
         <div class="pw-row">
           <input id="rConf" type="password" placeholder="Repeat your password">
           <button class="eye-btn" type="button" onclick="togglePw('rConf',this)">👁</button>
-        </div>
-      </div>
+        </div></div>
       <div id="rMsg1" class="msg"></div>
       <button class="btn btn-main full" id="rBtn1" onclick="registerRequest()">Send Verification Code</button>
     </div>
-    <!-- Step 2 -->
     <div id="regStep2" style="display:none">
       <div class="code-hint">
         A 6-character code was sent to your email.<br>
-        Check <strong>inbox and spam folder</strong>. Expires in 10 min.
+        Check <strong>inbox and spam</strong>. Expires in 10 min.
       </div>
-      <div class="field">
-        <label>Verification Code</label>
+      <div class="field"><label>Verification Code</label>
         <input id="regOtp" type="text" placeholder="ABC123" maxlength="6"
                style="text-transform:uppercase;letter-spacing:10px;font-size:26px;
                       font-weight:800;text-align:center;font-family:'JetBrains Mono',monospace;"
@@ -146,39 +131,28 @@
       <p>Enter your email to receive a reset code</p>
     </div>
     <div id="fStep1">
-      <div class="field">
-        <label>Email Address</label>
+      <div class="field"><label>Email Address</label>
         <input id="fEmail" type="email" placeholder="your@email.com"
-               onkeydown="if(event.key==='Enter')sendResetCode()">
-      </div>
+               onkeydown="if(event.key==='Enter')sendResetCode()"></div>
       <div id="fMsg1" class="msg"></div>
       <button class="btn btn-main full" onclick="sendResetCode()">Send Reset Code</button>
     </div>
     <div id="fStep2" style="display:none">
-      <div class="code-hint">
-        A 6-character reset code was sent to your email.<br>
-        Expires in 10 minutes.
-      </div>
-      <div class="field">
-        <label>Reset Code</label>
+      <div class="code-hint">A 6-character reset code was sent to your email. Expires in 10 min.</div>
+      <div class="field"><label>Reset Code</label>
         <input id="resetCode" type="text" placeholder="ABC123" maxlength="6"
                style="text-transform:uppercase;letter-spacing:10px;font-size:26px;
-                      font-weight:800;text-align:center;font-family:'JetBrains Mono',monospace;">
-      </div>
-      <div class="field">
-        <label>New Password</label>
+                      font-weight:800;text-align:center;font-family:'JetBrains Mono',monospace;"></div>
+      <div class="field"><label>New Password</label>
         <div class="pw-row">
           <input id="newPw" type="password" placeholder="Minimum 6 characters">
           <button class="eye-btn" type="button" onclick="togglePw('newPw',this)">👁</button>
-        </div>
-      </div>
-      <div class="field">
-        <label>Confirm New Password</label>
+        </div></div>
+      <div class="field"><label>Confirm New Password</label>
         <div class="pw-row">
           <input id="newPwConf" type="password" placeholder="Repeat new password">
           <button class="eye-btn" type="button" onclick="togglePw('newPwConf',this)">👁</button>
-        </div>
-      </div>
+        </div></div>
       <div id="fMsg2" class="msg"></div>
       <button class="btn btn-main full" onclick="resetPassword()">Reset Password</button>
     </div>
@@ -187,15 +161,11 @@
 
 <!-- ══════════ APP ══════════ -->
 <div id="appPage" class="page">
-  <div class="ambient">
-    <div class="amb a1"></div><div class="amb a2"></div><div class="amb a3"></div>
-  </div>
+  <div class="ambient"><div class="amb a1"></div><div class="amb a2"></div><div class="amb a3"></div></div>
 
-  <!-- Top Bar -->
   <div class="topbar">
     <div class="brand">Voice<span class="hl">AI</span></div>
     <div class="topbar-right">
-      <!-- Single selector: OUTPUT language only -->
       <div class="lang-wrap">
         <button class="lang-btn" id="langBtn" onclick="toggleLangMenu()">
           <span id="langLabel">🇺🇸 English</span>
@@ -216,51 +186,33 @@
     </div>
   </div>
 
-  <!-- Voice Interface -->
   <div class="voice-view">
     <div class="voice-center">
-
-      <!-- Auto detect badge -->
       <div class="auto-badge">🤖 Auto-detects your language — just speak!</div>
-
-      <!-- Orb + Rings -->
       <div class="orb-shell">
         <div class="rings-wrap" id="rings">
-          <div class="ring r1"></div>
-          <div class="ring r2"></div>
-          <div class="ring r3"></div>
+          <div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div>
         </div>
         <div class="orb" id="orb" onclick="startListening()">
-          <div class="orb-inner">
-            <div class="orb-icon" id="orbIcon">🎙️</div>
-          </div>
+          <div class="orb-inner"><div class="orb-icon" id="orbIcon">🎙️</div></div>
         </div>
       </div>
-
       <div class="status-tag ready" id="statusTag">TAP TO SPEAK</div>
-
-      <!-- Transcript -->
       <div class="info-box hidden" id="transcriptBox">
         <div class="box-lbl">You said</div>
         <div class="box-txt" id="transcriptText"></div>
       </div>
-
-      <!-- Translation -->
       <div class="info-box resp-box hidden" id="responseBox">
         <div class="box-lbl">Translation</div>
         <div class="box-txt" id="responseText"></div>
         <div class="box-meta" id="responseMeta"></div>
       </div>
-
     </div>
   </div>
-
   <input type="hidden" id="selLang" value="1">
 </div>
 
-<!-- TOAST -->
 <div class="toast hidden" id="toast"></div>
-
 <script src="app.js"></script>
 </body>
 </html>

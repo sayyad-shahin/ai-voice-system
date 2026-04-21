@@ -1,14 +1,7 @@
-import sqlite3
-import os
+import sqlite3, os
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-# Use RENDER_DB_PATH env var if set (for Render Disk), else use local folder
-DB_PATH = os.getenv(
-    "RENDER_DB_PATH",
-    os.path.join(BASE_DIR, "database", "voiceai.db")
-)
-
+DB_PATH  = os.getenv("RENDER_DB_PATH", os.path.join(BASE_DIR, "database", "voiceai.db"))
 os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
 
@@ -24,37 +17,27 @@ def init_tables():
     db = get_db()
     db.executescript("""
         CREATE TABLE IF NOT EXISTS users (
-            id         INTEGER PRIMARY KEY AUTOINCREMENT,
-            name       TEXT    NOT NULL,
-            username   TEXT    UNIQUE NOT NULL,
-            password   TEXT    NOT NULL,
-            email      TEXT    UNIQUE NOT NULL,
-            created_at TEXT    DEFAULT (datetime('now')),
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            created_at TEXT DEFAULT (datetime('now')),
             last_login TEXT
         );
-
         CREATE TABLE IF NOT EXISTS login_activity (
-            id         INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id    INTEGER,
-            username   TEXT,
-            action     TEXT,
-            ip         TEXT,
-            ts         TEXT DEFAULT (datetime('now')),
-            FOREIGN KEY(user_id) REFERENCES users(id)
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER, username TEXT, action TEXT, ip TEXT,
+            ts TEXT DEFAULT (datetime('now'))
         );
-
         CREATE TABLE IF NOT EXISTS conversations (
-            id          INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id     INTEGER,
-            username    TEXT,
-            input_text  TEXT,
-            output_text TEXT,
-            language    TEXT,
-            audio_url   TEXT,
-            created_at  TEXT DEFAULT (datetime('now')),
-            FOREIGN KEY(user_id) REFERENCES users(id)
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER, username TEXT,
+            input_text TEXT, output_text TEXT,
+            language TEXT, audio_url TEXT,
+            created_at TEXT DEFAULT (datetime('now'))
         );
     """)
     db.commit()
     db.close()
-    print(f"[DB] Tables ready at: {DB_PATH}")
+    print(f"[DB] Ready: {DB_PATH}")

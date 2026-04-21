@@ -1,258 +1,288 @@
-import os
-import random
-import string
-import hashlib
-import datetime
-import smtplib
+"""
+auth.py — Login, Register (OTP), Forgot Password, Reset Password
+"""
+
+import os, random, string, hashlib, datetime, smtplib, re
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-
 from flask import Blueprint, request, jsonify
 from config import get_db, init_tables
 
-auth_routes = Blueprint("auth", __name__)
-
+auth_routes   = Blueprint("auth", __name__)
 SMTP_EMAIL    = os.getenv("SMTP_EMAIL", "")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
 
-_reset_store: dict = {}   # { email: {code, expires_at} }
+_otp_store:   dict = {}
+_reset_store: dict = {}
 
 
-# ─── helpers ────────────────────────────────────────────────────────────────
+# ── HELPERS ───────────────────────────────────────────────────
 
-def _hash(pw: str) -> str:
-    return hashlib.sha256(pw.encode("utf-8")).hexdigest()
+def _hash(pw):
+    return hashlib.sha256(pw.encode()).hexdigest()
 
+def _code(k=6):
+    return "".join(random.choices(string.ascii_uppercase + string.digits, k=k))
 
-def _gen_code(k: int = 6) -> str:
-    chars = string.ascii_uppercase + string.digits
-    return "".join(random.choices(chars, k=k))
-
-
-def _log(db, user_id, username: str, action: str, ip: str = ""):
+def _log(db, uid, username, action, ip=""):
     try:
-        db.execute(
-            "INSERT INTO login_activity(user_id,username,action,ip) VALUES(?,?,?,?)",
-            (user_id, username, action, ip)
-        )
-    except Exception as exc:
-        print(f"[Auth] Activity log error: {exc}")
+        db.execute("INSERT INTO login_activity(user_id,username,action,ip) VALUES(?,?,?,?)",
+                   (uid, username, action, ip))
+    except Exception as e:
+        print(f"[Auth] Log error: {e}")
 
-
-def _send_code_email(to: str, code: str) -> bool:
-    """Send reset code via Gmail SMTP. Falls back to console if not configured."""
+def _send_email(to, subject, html):
     if not SMTP_EMAIL or not SMTP_PASSWORD:
-        print(f"[Auth] [DEV] Reset code for {to}: {code}")
+        match = re.search(r'monospace;"">([A-Z0-9]{5,8})<', html)
+        if not match:
+            match = re.search(r'>([A-Z0-9]{6})<', html)
+        code = match.group(1) if match else "CHECK LOGS"
+        print(f"\n{'='*50}\n[DEV EMAIL] To: {to}\n[DEV EMAIL] Code: {code}\n{'='*50}\n")
         return True
     try:
-        msg            = MIMEMultipart("alternative")
-        msg["Subject"] = "VoiceAI — Your Password Reset Code"
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = subject
         msg["From"]    = SMTP_EMAIL
         msg["To"]      = to
-        html = f"""
-        <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:520px;margin:auto;
-                    background:#07090f;color:#e8ecf4;padding:48px 40px;border-radius:20px;
-                    border:1px solid rgba(80,140,255,.15);">
-          <h2 style="margin:0 0 6px;font-size:24px;font-weight:800;">VoiceAI</h2>
-          <p style="color:#6b7a99;margin:0 0 30px;">Password Reset Request</p>
-          <p style="margin:0 0 22px;line-height:1.7;">
-            Use the code below to reset your password.
-            It expires in <strong style="color:#e8ecf4;">10 minutes</strong>.
-          </p>
-          <div style="background:#0d1220;border:1px solid rgba(80,140,255,.25);
-                      border-radius:14px;padding:32px;text-align:center;margin-bottom:28px;">
-            <span style="font-size:42px;font-weight:900;letter-spacing:14px;
-                         color:#3a7fff;font-family:'Courier New',monospace;">{code}</span>
-          </div>
-          <p style="color:#555f70;font-size:13px;">
-            If you did not request this, ignore this email — your account is safe.
-          </p>
-        </div>"""
         msg.attach(MIMEText(html, "html"))
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as srv:
-            srv.login(SMTP_EMAIL, SMTP_PASSWORD)
-            srv.sendmail(SMTP_EMAIL, to, msg.as_string())
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as s:
+            s.login(SMTP_EMAIL, SMTP_PASSWORD)
+            s.sendmail(SMTP_EMAIL, to, msg.as_string())
+        print(f"[Auth] Email sent → {to}")
         return True
-    except Exception as exc:
-        print(f"[Auth] Email send error: {exc}")
+    except Exception as e:
+        print(f"[Auth] Email error: {e}")
         return False
 
+def _email_html(code, heading, body):
+    return f"""
+    <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:520px;margin:auto;
+                background:#07090f;color:#e8ecf4;padding:48px 40px;border-radius:20px;
+                border:1px solid rgba(80,140,255,.15);">
+      <h2 style="margin:0 0 4px;font-size:24px;font-weight:900;">VoiceAI</h2>
+      <p style="color:#66748f;margin:0 0 28px;font-size:13px;">{heading}</p>
+      <p style="margin:0 0 24px;line-height:1.8;">{body}</p>
+      <div style="background:#0d1220;border:1px solid rgba(80,140,255,.25);
+                  border-radius:14px;padding:32px;text-align:center;margin-bottom:28px;">
+        <div style="font-size:44px;font-weight:900;letter-spacing:14px;
+                    color:#3a7fff;font-family:'Courier New',monospace;">{code}</div>
+        <p style="margin:10px 0 0;color:#66748f;font-size:13px;">Expires in 10 minutes</p>
+      </div>
+      <p style="color:#3d4a5c;font-size:12px;">If you did not request this, ignore this email.</p>
+    </div>"""
 
-# ─── routes ─────────────────────────────────────────────────────────────────
+
+# ── LOGIN ─────────────────────────────────────────────────────
 
 @auth_routes.route("/auth", methods=["POST"])
 def auth():
     try:
         init_tables()
-        data     = request.get_json(silent=True) or {}
-        username = data.get("username", "").strip()
-        password = data.get("password", "")
+        d        = request.get_json(silent=True) or {}
+        username = d.get("username", "").strip()
+        password = d.get("password", "")
         ip       = request.remote_addr or ""
 
         if not username or not password:
-            return jsonify({"success": False, "error": "Username and password are required."})
+            return jsonify({"success": False, "error": "Please enter username and password."})
 
         db  = get_db()
-        cur = db.cursor()
-        row = cur.execute(
-            "SELECT id, username, name, password FROM users WHERE username = ?",
-            (username,)
-        ).fetchone()
+        row = db.execute("SELECT id,username,name,password FROM users WHERE username=?",
+                         (username,)).fetchone()
 
         if not row:
             db.close()
             return jsonify({"success": False,
-                            "error": "No account found with that username. Please register first."})
+                            "error": "No account found. Please register first."})
 
         stored  = row["password"]
         matched = (stored == _hash(password)) or (stored == password)
 
         if not matched:
             _log(db, row["id"], username, "failed_login", ip)
-            db.commit()
-            db.close()
-            return jsonify({"success": False,
-                            "error": "Incorrect password. Please check and try again."})
+            db.commit(); db.close()
+            return jsonify({"success": False, "error": "Incorrect password."})
 
-        # Upgrade plain-text password to hash silently
         if stored == password:
-            db.execute("UPDATE users SET password = ? WHERE id = ?", (_hash(password), row["id"]))
+            db.execute("UPDATE users SET password=? WHERE id=?", (_hash(password), row["id"]))
 
-        db.execute("UPDATE users SET last_login = ? WHERE id = ?",
+        db.execute("UPDATE users SET last_login=? WHERE id=?",
                    (datetime.datetime.now().isoformat(), row["id"]))
         _log(db, row["id"], username, "login", ip)
-        db.commit()
-        db.close()
+        db.commit(); db.close()
 
         return jsonify({"success": True, "username": row["username"], "name": row["name"]})
+    except Exception as e:
+        print(f"[Auth] /auth: {e}")
+        return jsonify({"success": False, "error": "Server error."}), 500
 
-    except Exception as exc:
-        print(f"[Auth] /auth error: {exc}")
-        return jsonify({"success": False, "error": "Server error. Please try again."}), 500
 
+# ── REGISTER STEP 1 — send OTP ────────────────────────────────
 
-@auth_routes.route("/register", methods=["POST"])
-def register():
+@auth_routes.route("/register/request", methods=["POST"])
+def register_request():
     try:
         init_tables()
-        data     = request.get_json(silent=True) or {}
-        name     = data.get("name", "").strip()
-        email    = data.get("email", "").strip().lower()
-        username = data.get("username", "").strip()
-        password = data.get("password", "")
-        ip       = request.remote_addr or ""
+        d        = request.get_json(silent=True) or {}
+        name     = d.get("name", "").strip()
+        email    = d.get("email", "").strip().lower()
+        username = d.get("username", "").strip()
+        password = d.get("password", "")
 
         if not all([name, email, username, password]):
             return jsonify({"success": False, "error": "All fields are required."})
         if "@" not in email or "." not in email.split("@")[-1]:
-            return jsonify({"success": False, "error": "Please enter a valid email address."})
+            return jsonify({"success": False, "error": "Please enter a valid email."})
         if len(password) < 6:
-            return jsonify({"success": False,
-                            "error": "Password must be at least 6 characters long."})
+            return jsonify({"success": False, "error": "Password must be at least 6 characters."})
         if len(username) < 3:
-            return jsonify({"success": False,
-                            "error": "Username must be at least 3 characters long."})
-        if not username.replace("_", "").replace(".", "").isalnum():
-            return jsonify({"success": False,
-                            "error": "Username may only contain letters, numbers, dots and underscores."})
+            return jsonify({"success": False, "error": "Username must be at least 3 characters."})
+        if not username.replace("_","").replace(".","").isalnum():
+            return jsonify({"success": False, "error": "Username: letters, numbers, _ and . only."})
 
-        db  = get_db()
-        cur = db.cursor()
-
-        if cur.execute("SELECT id FROM users WHERE username = ?", (username,)).fetchone():
+        db = get_db()
+        if db.execute("SELECT id FROM users WHERE username=?", (username,)).fetchone():
             db.close()
-            return jsonify({"success": False,
-                            "error": "That username is already taken. Please choose another."})
-        if cur.execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone():
+            return jsonify({"success": False, "error": "Username already taken."})
+        if db.execute("SELECT id FROM users WHERE email=?", (email,)).fetchone():
             db.close()
-            return jsonify({"success": False,
-                            "error": "An account with that email already exists."})
-
-        db.execute(
-            "INSERT INTO users(name, username, password, email) VALUES(?,?,?,?)",
-            (name, username, _hash(password), email)
-        )
-        db.commit()
-        uid = cur.execute("SELECT id FROM users WHERE username=?", (username,)).fetchone()["id"]
-        _log(db, uid, username, "register", ip)
-        db.commit()
+            return jsonify({"success": False, "error": "Email already registered."})
         db.close()
 
+        otp = _code(6)
+        _otp_store[email] = {
+            "code":       otp,
+            "expires_at": datetime.datetime.now() + datetime.timedelta(minutes=10),
+            "pending":    {"name": name, "email": email, "username": username, "password": password}
+        }
+
+        html = _email_html(otp, "Email Verification",
+                           "Enter this code to complete your VoiceAI registration.")
+        if not _send_email(email, "VoiceAI — Verify your email", html):
+            return jsonify({"success": False, "error": "Failed to send email. Try again."})
+
+        return jsonify({"success": True, "message": "Verification code sent to your email."})
+    except Exception as e:
+        print(f"[Auth] /register/request: {e}")
+        return jsonify({"success": False, "error": "Server error."}), 500
+
+
+# ── REGISTER STEP 2 — verify OTP ─────────────────────────────
+
+@auth_routes.route("/register/verify", methods=["POST"])
+def register_verify():
+    try:
+        init_tables()
+        d     = request.get_json(silent=True) or {}
+        email = d.get("email", "").strip().lower()
+        code  = d.get("code", "").strip().upper()
+        ip    = request.remote_addr or ""
+
+        if not email or not code:
+            return jsonify({"success": False, "error": "Email and code required."})
+
+        stored = _otp_store.get(email)
+        if not stored:
+            return jsonify({"success": False,
+                            "error": "No pending registration. Please register again."})
+        if datetime.datetime.now() > stored["expires_at"]:
+            _otp_store.pop(email, None)
+            return jsonify({"success": False, "error": "Code expired. Please register again."})
+        if stored["code"] != code:
+            return jsonify({"success": False, "error": "Wrong code. Please check your email."})
+
+        p  = stored["pending"]
+        db = get_db()
+        if db.execute("SELECT id FROM users WHERE username=?", (p["username"],)).fetchone():
+            db.close(); _otp_store.pop(email, None)
+            return jsonify({"success": False, "error": "Username just taken. Try another."})
+        if db.execute("SELECT id FROM users WHERE email=?", (email,)).fetchone():
+            db.close(); _otp_store.pop(email, None)
+            return jsonify({"success": False, "error": "Email already registered."})
+
+        db.execute("INSERT INTO users(name,username,password,email) VALUES(?,?,?,?)",
+                   (p["name"], p["username"], _hash(p["password"]), email))
+        db.commit()
+        uid = db.execute("SELECT id FROM users WHERE username=?",
+                         (p["username"],)).fetchone()["id"]
+        _log(db, uid, p["username"], "register", ip)
+        db.commit(); db.close()
+        _otp_store.pop(email, None)
+
         return jsonify({"success": True, "message": "Account created! You can now sign in."})
+    except Exception as e:
+        print(f"[Auth] /register/verify: {e}")
+        return jsonify({"success": False, "error": "Server error."}), 500
 
-    except Exception as exc:
-        print(f"[Auth] /register error: {exc}")
-        return jsonify({"success": False, "error": "Server error. Please try again."}), 500
 
+# ── FORGOT PASSWORD ───────────────────────────────────────────
 
 @auth_routes.route("/forgot-password", methods=["POST"])
 def forgot_password():
     try:
         init_tables()
-        data  = request.get_json(silent=True) or {}
-        email = data.get("email", "").strip().lower()
+        d     = request.get_json(silent=True) or {}
+        email = d.get("email", "").strip().lower()
 
         if not email:
-            return jsonify({"success": False, "error": "Email address is required."})
+            return jsonify({"success": False, "error": "Email is required."})
 
         db  = get_db()
         row = db.execute("SELECT id FROM users WHERE email=?", (email,)).fetchone()
         db.close()
 
         if not row:
-            return jsonify({"success": False,
-                            "error": "No account found with that email address."})
+            return jsonify({"success": False, "error": "No account found with that email."})
 
-        code       = _gen_code()
-        expires_at = datetime.datetime.now() + datetime.timedelta(minutes=10)
-        _reset_store[email] = {"code": code, "expires_at": expires_at}
+        otp = _code(6)
+        _reset_store[email] = {
+            "code":       otp,
+            "expires_at": datetime.datetime.now() + datetime.timedelta(minutes=10)
+        }
 
-        if not _send_code_email(email, code):
-            return jsonify({"success": False,
-                            "error": "Failed to send email. Check SMTP configuration."})
+        html = _email_html(otp, "Password Reset",
+                           "Use this code to reset your VoiceAI password.")
+        if not _send_email(email, "VoiceAI — Password Reset Code", html):
+            return jsonify({"success": False, "error": "Failed to send email."})
 
         return jsonify({"success": True, "message": "Reset code sent to your email."})
+    except Exception as e:
+        print(f"[Auth] /forgot-password: {e}")
+        return jsonify({"success": False, "error": "Server error."}), 500
 
-    except Exception as exc:
-        print(f"[Auth] /forgot-password error: {exc}")
-        return jsonify({"success": False, "error": "Server error. Please try again."}), 500
 
+# ── RESET PASSWORD ────────────────────────────────────────────
 
 @auth_routes.route("/reset-password", methods=["POST"])
 def reset_password():
     try:
-        data     = request.get_json(silent=True) or {}
-        email    = data.get("email", "").strip().lower()
-        code     = data.get("code", "").strip().upper()
-        password = data.get("password", "")
+        d        = request.get_json(silent=True) or {}
+        email    = d.get("email", "").strip().lower()
+        code     = d.get("code", "").strip().upper()
+        password = d.get("password", "")
 
         if not all([email, code, password]):
-            return jsonify({"success": False, "error": "All fields are required."})
+            return jsonify({"success": False, "error": "All fields required."})
         if len(password) < 6:
-            return jsonify({"success": False,
-                            "error": "Password must be at least 6 characters."})
+            return jsonify({"success": False, "error": "Password must be at least 6 characters."})
 
         stored = _reset_store.get(email)
         if not stored:
             return jsonify({"success": False,
-                            "error": "No active reset code found. Please request a new one."})
+                            "error": "No active reset request. Please request a new code."})
         if datetime.datetime.now() > stored["expires_at"]:
             _reset_store.pop(email, None)
-            return jsonify({"success": False,
-                            "error": "Reset code has expired. Please request a new one."})
+            return jsonify({"success": False, "error": "Code expired. Request a new one."})
         if stored["code"] != code:
-            return jsonify({"success": False,
-                            "error": "Incorrect reset code. Please check and try again."})
+            return jsonify({"success": False, "error": "Wrong code. Please check your email."})
 
         init_tables()
         db = get_db()
         db.execute("UPDATE users SET password=? WHERE email=?", (_hash(password), email))
-        db.commit()
-        db.close()
+        db.commit(); db.close()
         _reset_store.pop(email, None)
 
-        return jsonify({"success": True, "message": "Password reset successfully. Please sign in."})
-
-    except Exception as exc:
-        print(f"[Auth] /reset-password error: {exc}")
-        return jsonify({"success": False, "error": "Server error. Please try again."}), 500
+        return jsonify({"success": True, "message": "Password reset! Please sign in."})
+    except Exception as e:
+        print(f"[Auth] /reset-password: {e}")
+        return jsonify({"success": False, "error": "Server error."}), 500
