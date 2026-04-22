@@ -1,10 +1,3 @@
-"""
-tts.py — Text-to-Speech
-========================
-Fine-tuned voice settings for clearer Indian language pronunciation.
-ElevenLabs primary + Google TTS fallback (never fails).
-"""
-
 import os, uuid, glob, time, requests
 
 API_KEY     = os.getenv("ELEVENLABS_API_KEY", "").strip()

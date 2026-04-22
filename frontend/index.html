@@ -10,7 +10,7 @@
 </head>
 <body>
 
-<!-- WELCOME -->
+<!-- ══════════ WELCOME ══════════ -->
 <div id="welcomePage" class="page active">
   <div class="ambient"><div class="amb a1"></div><div class="amb a2"></div><div class="amb a3"></div></div>
   <div class="welcome-wrap">
@@ -35,7 +35,7 @@
   </div>
 </div>
 
-<!-- LOGIN -->
+<!-- ══════════ LOGIN ══════════ -->
 <div id="loginPage" class="page">
   <div class="ambient"><div class="amb a1"></div><div class="amb a2"></div></div>
   <div class="card">
@@ -61,7 +61,7 @@
       <div class="pw-row">
         <input id="lPass" type="password" placeholder="Your password" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()">
         <button class="eye-btn" type="button" onclick="togglePw('lPass',this)" aria-label="Toggle password">
-          <svg id="eyeIcon_lPass" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
         </button>
       </div>
     </div>
@@ -78,7 +78,7 @@
   </div>
 </div>
 
-<!-- REGISTER -->
+<!-- ══════════ REGISTER ══════════ -->
 <div id="registerPage" class="page">
   <div class="ambient"><div class="amb a1"></div><div class="amb a2"></div></div>
   <div class="card">
@@ -96,8 +96,6 @@
       <h2>Create account</h2>
       <p>Join VoiceAI — completely free</p>
     </div>
-
-    <!-- Step 1 -->
     <div id="regStep1">
       <div class="field"><label>Full Name</label><input id="rName" type="text" placeholder="Your full name"></div>
       <div class="field"><label>Email</label><input id="rEmail" type="email" placeholder="your@email.com"></div>
@@ -119,8 +117,6 @@
       <div id="rMsg1" class="msg"></div>
       <button class="btn btn-main full" id="rBtn1" onclick="registerRequest()">Send Verification Code</button>
     </div>
-
-    <!-- Step 2 -->
     <div id="regStep2" style="display:none">
       <div class="code-hint">
         A 6-character code was sent to your email.<br>
@@ -133,14 +129,13 @@
       <button class="btn btn-main full" id="rBtn2" onclick="registerVerify()">Verify &amp; Create Account</button>
       <button class="btn btn-ghost full" style="margin-top:10px" onclick="resendOtp()">Resend Code</button>
     </div>
-
     <p class="sub-link" style="text-align:center;margin-top:16px;">
       Already have an account? <a href="#" onclick="showPage('loginPage')">Sign in</a>
     </p>
   </div>
 </div>
 
-<!-- FORGOT PASSWORD -->
+<!-- ══════════ FORGOT PASSWORD ══════════ -->
 <div id="forgotPage" class="page">
   <div class="ambient"><div class="amb a1"></div><div class="amb a2"></div></div>
   <div class="card">
@@ -189,31 +184,46 @@
   </div>
 </div>
 
-<!-- APP -->
+<!-- ══════════ APP ══════════ -->
 <div id="appPage" class="page">
   <div class="ambient"><div class="amb a1"></div><div class="amb a2"></div><div class="amb a3"></div></div>
 
+  <!-- TOP BAR ─ FROM → TO dual selectors -->
   <div class="topbar">
     <div class="brand">Voice<span class="hl">AI</span></div>
     <div class="topbar-right">
-      <div class="lang-wrap">
-        <button class="lang-btn" id="langBtn" onclick="toggleLangMenu()">
-          <span id="langLabel">English</span>
+
+      <!-- FROM: mic input language -->
+      <div class="lang-wrap" id="fromWrap">
+        <button class="lang-btn from-btn" id="fromBtn" onclick="toggleFromMenu()" aria-label="Speaking language">
+          <span class="lbtn-tag">I speak</span>
+          <span id="fromName">Hindi</span>
           <svg class="caret-icon" width="12" height="12" viewBox="0 0 12 12" fill="none">
             <path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </button>
-        <div id="langMenu" class="lang-menu hidden">
-          <div class="lang-opt active" data-label="English"  onclick="selectLang('1','English')">English</div>
-          <div class="lang-opt"        data-label="Hindi"    onclick="selectLang('2','Hindi')">Hindi — हिंदी</div>
-          <div class="lang-opt"        data-label="Marathi"  onclick="selectLang('3','Marathi')">Marathi — मराठी</div>
-          <div class="lang-opt"        data-label="Tamil"    onclick="selectLang('4','Tamil')">Tamil — தமிழ்</div>
-          <div class="lang-opt"        data-label="Telugu"   onclick="selectLang('5','Telugu')">Telugu — తెలుగు</div>
-          <div class="lang-opt"        data-label="Gujarati" onclick="selectLang('6','Gujarati')">Gujarati — ગુજરાતી</div>
-          <div class="lang-opt"        data-label="Bengali"  onclick="selectLang('7','Bengali')">Bengali — বাংলা</div>
-          <div class="lang-opt"        data-label="Kannada"  onclick="selectLang('8','Kannada')">Kannada — ಕನ್ನಡ</div>
-        </div>
+        <div id="fromMenu" class="lang-menu hidden"></div>
       </div>
+
+      <!-- Arrow -->
+      <div class="lang-arrow-divider">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+
+      <!-- TO: translation target language -->
+      <div class="lang-wrap" id="toWrap">
+        <button class="lang-btn to-btn" id="toBtn" onclick="toggleToMenu()" aria-label="Translation language">
+          <span class="lbtn-tag">Translate to</span>
+          <span id="toName">English</span>
+          <svg class="caret-icon" width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <div id="toMenu" class="lang-menu hidden"></div>
+      </div>
+
       <button class="btn btn-ghost" onclick="logout()">Sign Out</button>
     </div>
   </div>
@@ -221,7 +231,10 @@
   <div class="voice-view">
     <div class="voice-center">
 
-      <div class="auto-label">Auto-detects input language</div>
+      <!-- Live badge showing current FROM → TO flow -->
+      <div class="lang-badge" id="langBadge">
+        Speak <strong>Hindi</strong> &rarr; hear <strong>English</strong>
+      </div>
 
       <!-- Orb -->
       <div class="orb-shell">
@@ -232,23 +245,20 @@
         </div>
         <div class="orb" id="orb" onclick="startListening()" role="button" aria-label="Tap to speak">
           <div class="orb-inner">
-            <!-- SVG mic icon — no emoji -->
             <svg id="orbSvg" class="orb-svg" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
               <rect x="18" y="6" width="12" height="22" rx="6" fill="white" opacity=".95"/>
               <path d="M10 24c0 7.7 6.3 14 14 14s14-6.3 14-14" stroke="white" stroke-width="2.5" stroke-linecap="round" fill="none" opacity=".95"/>
               <line x1="24" y1="38" x2="24" y2="44" stroke="white" stroke-width="2.5" stroke-linecap="round" opacity=".95"/>
             </svg>
-            <!-- Processing spinner (hidden by default) -->
             <svg id="orbSpinner" class="orb-spinner hidden" viewBox="0 0 48 48" fill="none">
               <circle cx="24" cy="24" r="18" stroke="white" stroke-width="3" stroke-dasharray="28 85" stroke-linecap="round" opacity=".9"/>
             </svg>
-            <!-- Speaking wave (hidden by default) -->
             <svg id="orbWave" class="orb-wave hidden" viewBox="0 0 48 48" fill="none">
               <rect x="8"  y="18" width="4" height="12" rx="2" fill="white" opacity=".9"/>
               <rect x="16" y="12" width="4" height="24" rx="2" fill="white" opacity=".9"/>
               <rect x="24" y="8"  width="4" height="32" rx="2" fill="white" opacity=".9"/>
               <rect x="32" y="12" width="4" height="24" rx="2" fill="white" opacity=".9"/>
-              <rect x="40" y="18" width="4" height="12" rx="2" fill="white" opacity=".9"  transform="translate(-4,0)"/>
+              <rect x="36" y="18" width="4" height="12" rx="2" fill="white" opacity=".9"/>
             </svg>
           </div>
         </div>
@@ -269,13 +279,10 @@
 
     </div>
   </div>
-
-  <input type="hidden" id="selLang" value="1">
 </div>
 
 <!-- TOAST -->
 <div class="toast hidden" id="toast"></div>
-
 <script src="app.js"></script>
 </body>
 </html>

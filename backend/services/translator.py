@@ -1,14 +1,3 @@
-"""
-translator.py — Fine-tuned translation
-========================================
-Key improvements for accuracy:
-- source="auto" always (Google detects correctly)
-- Sentence-boundary splitting preserves meaning
-- Parallel chunks for speed on long text
-- Two-hop fallback (via English) for rare failures
-- Cleans up extra whitespace in output
-"""
-
 import re, time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from deep_translator import GoogleTranslator
@@ -17,22 +6,17 @@ _MAX_CHARS   = 4800
 _MAX_WORKERS = 4
 _RETRY_WAIT  = 0.5
 
-# Languages that need special handling for script detection
-_INDIC = {"hi","mr","ta","te","gu","bn","kn"}
-
 
 def _clean(text: str) -> str:
-    """Remove extra whitespace and normalize punctuation spacing."""
     text = re.sub(r' +', ' ', text)
-    text = re.sub(r' ([.,!?;:])', r'\1', text)
+    text = re.sub(r' ([.,!?;:।])', r'\1', text)
     return text.strip()
 
 
 def _split(text: str) -> list:
     if len(text) <= _MAX_CHARS:
         return [text]
-    # Split on sentence boundaries
-    parts = re.split(r'(?<=[.!?।\?\!।])\s+', text)
+    parts = re.split(r'(?<=[.!?।])\s+', text)
     chunks, cur = [], ""
     for part in parts:
         if len(cur) + len(part) + 1 > _MAX_CHARS:
@@ -44,51 +28,76 @@ def _split(text: str) -> list:
     return chunks or [text]
 
 
-def _translate_one(chunk: str, target: str, retries: int = 2) -> str:
+def _google(source: str, target: str, text: str, retries: int = 2):
+    """Single Google Translate call with retry."""
     for attempt in range(retries + 1):
         try:
-            result = GoogleTranslator(source="auto", target=target).translate(chunk)
+            result = GoogleTranslator(source=source, target=target).translate(text)
             if result and result.strip():
-                return _clean(result)
+                return result.strip()
         except Exception as e:
-            print(f"[Translator] attempt {attempt+1} error: {e}")
+            print(f"[Translator] {source}→{target} attempt {attempt+1}: {e}")
             if attempt < retries:
                 time.sleep(_RETRY_WAIT * (attempt + 1))
+    return None
 
-    # Two-hop fallback via English for Indic languages
-    if target in _INDIC:
-        try:
-            print("[Translator] Trying two-hop fallback via English…")
-            en = GoogleTranslator(source="auto", target="en").translate(chunk)
-            if en and en.strip():
-                final = GoogleTranslator(source="en", target=target).translate(en.strip())
-                if final and final.strip():
-                    return _clean(final)
-        except Exception as e:
-            print(f"[Translator] Two-hop failed: {e}")
 
-    # Return original text if all attempts fail
-    return chunk
+def _translate_one(chunk: str, target: str) -> str:
+    """
+    Translate one chunk using English as universal pivot.
+
+    Pipeline:
+      1. any input  →  English    (auto-detect source)
+      2. English    →  target     (skip if target is English)
+
+    Fallback (if pivot fails):
+      Direct auto → target (best effort)
+    """
+    print(f"[Translator] chunk: '{chunk[:50]}' → target: {target}")
+
+    # ── Step 1: get English version ──────────────────────
+    en_text = _google("auto", "en", chunk)
+
+    if not en_text:
+        # English pivot failed entirely — try direct translation
+        print(f"[Translator] English pivot failed, trying direct auto→{target}")
+        result = _google("auto", target, chunk)
+        return _clean(result) if result else chunk
+
+    print(f"[Translator] English: '{en_text[:60]}'")
+
+    # ── Step 2: English is the target — done ─────────────
+    if target == "en":
+        return _clean(en_text)
+
+    # ── Step 3: English → target ─────────────────────────
+    final = _google("en", target, en_text)
+    if final:
+        print(f"[Translator] Final ({target}): '{final[:60]}'")
+        return _clean(final)
+
+    # ── Step 4: direct fallback ───────────────────────────
+    print(f"[Translator] en→{target} failed, trying direct auto→{target}")
+    result = _google("auto", target, chunk)
+    return _clean(result) if result else chunk
 
 
 def translate(text: str, target_lang: str) -> str:
     """
-    Translate text to target_lang.
-    Auto-detects source language.
-    Handles any length via parallel chunks.
+    Translate text (any language) to target_lang.
+    Uses English as a pivot for reliability.
+    Handles any length via parallel chunk processing.
     """
     if not text or not text.strip():
         return text
 
     text   = text.strip()
     chunks = _split(text)
+    print(f"[Translator] {len(chunks)} chunk(s) → {target_lang}")
 
     if len(chunks) == 1:
-        result = _translate_one(chunks[0], target_lang)
-        print(f"[Translator] '{text[:50]}' → '{result[:50]}' ({target_lang})")
-        return result
+        return _translate_one(chunks[0], target_lang)
 
-    # Parallel translation for long text
     results = {}
     with ThreadPoolExecutor(max_workers=_MAX_WORKERS) as pool:
         futures = {pool.submit(_translate_one, chunk, target_lang): i

@@ -1,14 +1,24 @@
-/* ═══════════════════════════════════════
-   VoiceAI  app.js  v6.0  FINAL
-   - No emojis anywhere
-   - SVG icons in orb (mic / spinner / wave)
-   - Correct translation flow
-   - Auth guard via sessionStorage
-═══════════════════════════════════════ */
-
 const API = "https://ai-voice-system-j313.onrender.com";
 
-/* ── SESSION ──────────────────────────────────────── */
+/* ── LANGUAGE TABLE ──────────────────────────────────── */
+const LANGS = [
+  { code:"1", lang:"en", sr:"en-US", name:"English",  native:"English"  },
+  { code:"2", lang:"hi", sr:"hi-IN", name:"Hindi",    native:"हिंदी"    },
+  { code:"3", lang:"mr", sr:"mr-IN", name:"Marathi",  native:"मराठी"    },
+  { code:"4", lang:"ta", sr:"ta-IN", name:"Tamil",    native:"தமிழ்"   },
+  { code:"5", lang:"te", sr:"te-IN", name:"Telugu",   native:"తెలుగు"  },
+  { code:"6", lang:"gu", sr:"gu-IN", name:"Gujarati", native:"ગુજરાતી" },
+  { code:"7", lang:"bn", sr:"bn-IN", name:"Bengali",  native:"বাংলা"   },
+  { code:"8", lang:"kn", sr:"kn-IN", name:"Kannada",  native:"ಕನ್ನಡ"  },
+];
+
+// Default: speak Hindi → translate to English
+let _fromCode = "2";
+let _toCode   = "1";
+
+function getLang(code){ return LANGS.find(l => l.code === code) || LANGS[0]; }
+
+/* ── SESSION ─────────────────────────────────────────── */
 const S = {
   set(u,n,v){
     sessionStorage.setItem("va_u",u);
@@ -18,19 +28,19 @@ const S = {
   },
   clear(){["va_u","va_n","va_v","va_ok"].forEach(k=>sessionStorage.removeItem(k));},
   get username(){return sessionStorage.getItem("va_u")||"";},
-  get name()    {return sessionStorage.getItem("va_n")||"";},
-  get voice()   {return sessionStorage.getItem("va_v")||"EXAVITQu4vr4xnSDxMaL";},
-  get ok()      {return sessionStorage.getItem("va_ok")==="1";}
+  get name()   {return sessionStorage.getItem("va_n")||"";},
+  get voice()  {return sessionStorage.getItem("va_v")||"EXAVITQu4vr4xnSDxMaL";},
+  get ok()     {return sessionStorage.getItem("va_ok")==="1";}
 };
 
-/* ── AUTH GUARD ───────────────────────────────────── */
+/* ── AUTH GUARD ──────────────────────────────────────── */
 function showPage(id){
   if(id==="appPage"&&!S.ok){notify("Please sign in to continue.");id="loginPage";}
   document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
   document.getElementById(id).classList.add("active");
 }
 
-/* ── TOAST ────────────────────────────────────────── */
+/* ── TOAST ───────────────────────────────────────────── */
 let _tt;
 function notify(msg,ms=3400){
   const el=document.getElementById("toast");
@@ -38,7 +48,7 @@ function notify(msg,ms=3400){
   clearTimeout(_tt);_tt=setTimeout(()=>el.classList.add("hidden"),ms);
 }
 
-/* ── INLINE MESSAGES ──────────────────────────────── */
+/* ── INLINE MESSAGES ─────────────────────────────────── */
 function showMsg(id,text,type){
   const el=document.getElementById(id);if(!el)return;
   el.textContent=text;el.className="msg show "+type;
@@ -48,7 +58,7 @@ function clearMsg(id){
   el.textContent="";el.className="msg";
 }
 
-/* ── ORB STATE ────────────────────────────────────── */
+/* ── ORB STATE ───────────────────────────────────────── */
 function setStatus(state,label){
   const orb  = document.getElementById("orb");
   const rings= document.getElementById("rings");
@@ -56,58 +66,113 @@ function setStatus(state,label){
   const mic  = document.getElementById("orbSvg");
   const spin = document.getElementById("orbSpinner");
   const wave = document.getElementById("orbWave");
-  if(!orb) return;
-
+  if(!orb)return;
   orb.className   = "orb "+state;
   rings.className = "rings-wrap "+state;
   tag.className   = "status-tag "+state;
   tag.textContent = label;
-
-  // Switch SVG icon
   mic.classList.add("hidden");
   spin.classList.add("hidden");
   wave.classList.add("hidden");
-
-  if(state==="processing") spin.classList.remove("hidden");
-  else if(state==="speaking") wave.classList.remove("hidden");
-  else mic.classList.remove("hidden");
+  if(state==="processing")     spin.classList.remove("hidden");
+  else if(state==="speaking")  wave.classList.remove("hidden");
+  else                          mic.classList.remove("hidden");
 }
 
-/* ── PASSWORD TOGGLE ──────────────────────────────── */
+/* ── PASSWORD TOGGLE ─────────────────────────────────── */
 function togglePw(id,btn){
   const inp=document.getElementById(id);
   if(inp.type==="password"){
     inp.type="text";
     btn.innerHTML=`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
-  } else {
+  }else{
     inp.type="password";
     btn.innerHTML=`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
   }
 }
 
-/* ── LANGUAGE SELECTOR ────────────────────────────── */
-let _langOpen=false;
-function toggleLangMenu(){
-  const menu=document.getElementById("langMenu");
-  const btn=document.getElementById("langBtn");
-  _langOpen=!_langOpen;
-  menu.classList.toggle("hidden",!_langOpen);
-  btn.classList.toggle("open",_langOpen);
+/* ── DUAL LANGUAGE DROPDOWNS ───────────────────────────── */
+let _fromOpen = false, _toOpen = false;
+
+function _buildMenu(menuId, activeCode, onSelect){
+  const menu = document.getElementById(menuId);
+  if(!menu) return;
+  menu.innerHTML = "";
+  LANGS.forEach(l => {
+    const div = document.createElement("div");
+    div.className = "lang-opt" + (l.code === activeCode ? " active" : "");
+    div.innerHTML = `<span class="lo-name">${l.name}</span><span class="lo-native">${l.native}</span>`;
+    div.onclick = () => onSelect(l);
+    menu.appendChild(div);
+  });
 }
-function selectLang(code,label){
-  document.getElementById("selLang").value=code;
-  document.getElementById("langLabel").textContent=label;
-  document.querySelectorAll(".lang-opt").forEach(el=>
-    el.classList.toggle("active",el.getAttribute("data-label")===label));
-  if(_langOpen)toggleLangMenu();
-  notify("Output language: "+label);
+
+function _closeAll(){
+  _fromOpen = false; _toOpen = false;
+  ["fromMenu","toMenu"].forEach(id=>{
+    const m=document.getElementById(id); if(m) m.classList.add("hidden");
+  });
+  ["fromBtn","toBtn"].forEach(id=>{
+    const b=document.getElementById(id); if(b) b.classList.remove("open");
+  });
 }
-document.addEventListener("click",e=>{
-  const wrap=document.querySelector(".lang-wrap");
-  if(wrap&&!wrap.contains(e.target)&&_langOpen)toggleLangMenu();
+
+function toggleFromMenu(){
+  if(_toOpen){ _toOpen=false; document.getElementById("toMenu").classList.add("hidden"); document.getElementById("toBtn").classList.remove("open"); }
+  _fromOpen = !_fromOpen;
+  const menu = document.getElementById("fromMenu");
+  const btn  = document.getElementById("fromBtn");
+  if(_fromOpen){
+    _buildMenu("fromMenu", _fromCode, l => {
+      _fromCode = l.code;
+      // ← KEY: update mic recognition language to what user speaks
+      if(recognition) recognition.lang = l.sr;
+      document.getElementById("fromName").textContent = l.name;
+      _updateBadge();
+      _closeAll();
+      notify("Speaking in: " + l.name + " — " + l.native);
+    });
+    menu.classList.remove("hidden"); btn.classList.add("open");
+  } else {
+    menu.classList.add("hidden"); btn.classList.remove("open");
+  }
+}
+
+function toggleToMenu(){
+  if(_fromOpen){ _fromOpen=false; document.getElementById("fromMenu").classList.add("hidden"); document.getElementById("fromBtn").classList.remove("open"); }
+  _toOpen = !_toOpen;
+  const menu = document.getElementById("toMenu");
+  const btn  = document.getElementById("toBtn");
+  if(_toOpen){
+    _buildMenu("toMenu", _toCode, l => {
+      _toCode = l.code;
+      document.getElementById("toName").textContent = l.name;
+      _updateBadge();
+      _closeAll();
+      notify("Translating to: " + l.name + " — " + l.native);
+    });
+    menu.classList.remove("hidden"); btn.classList.add("open");
+  } else {
+    menu.classList.add("hidden"); btn.classList.remove("open");
+  }
+}
+
+function _updateBadge(){
+  const el = document.getElementById("langBadge");
+  if(!el) return;
+  const f = getLang(_fromCode), t = getLang(_toCode);
+  el.innerHTML = `Speak <strong>${f.name}</strong> &rarr; hear <strong>${t.name}</strong>`;
+}
+
+// Close menus on outside click
+document.addEventListener("click", e => {
+  const fw = document.getElementById("fromWrap");
+  const tw = document.getElementById("toWrap");
+  if(fw && !fw.contains(e.target) && _fromOpen){ _fromOpen=false; document.getElementById("fromMenu").classList.add("hidden"); document.getElementById("fromBtn").classList.remove("open"); }
+  if(tw && !tw.contains(e.target) && _toOpen)  { _toOpen=false;  document.getElementById("toMenu").classList.add("hidden");   document.getElementById("toBtn").classList.remove("open"); }
 });
 
-/* ── LOAD VOICES ──────────────────────────────────── */
+/* ── LOAD VOICES ─────────────────────────────────────── */
 async function loadVoices(){
   const sel=document.getElementById("voiceSelect");if(!sel)return;
   try{
@@ -120,16 +185,13 @@ async function loadVoices(){
       {id:"TxGEqnHWrfWFTfGW9XjX",name:"Josh"},
       {id:"pNInz6obpgDQGcFmaJgB",name:"Adam"},
     ];
-    list.forEach(v=>{
-      const o=document.createElement("option");
-      o.value=v.id;o.textContent=v.name;sel.appendChild(o);
-    });
+    list.forEach(v=>{const o=document.createElement("option");o.value=v.id;o.textContent=v.name;sel.appendChild(o);});
   }catch{
     if(sel)sel.innerHTML='<option value="EXAVITQu4vr4xnSDxMaL">Rachel</option>';
   }
 }
 
-/* ── LOGIN ────────────────────────────────────────── */
+/* ── LOGIN ───────────────────────────────────────────── */
 async function login(){
   const username=document.getElementById("lUser").value.trim();
   const password=document.getElementById("lPass").value;
@@ -156,7 +218,7 @@ async function login(){
   }
 }
 
-/* ── REGISTER STEP 1 ──────────────────────────────── */
+/* ── REGISTER STEP 1 ─────────────────────────────────── */
 async function registerRequest(){
   const name=document.getElementById("rName").value.trim();
   const email=document.getElementById("rEmail").value.trim();
@@ -183,7 +245,7 @@ async function registerRequest(){
   finally{btn.disabled=false;btn.textContent="Send Verification Code";}
 }
 
-/* ── REGISTER STEP 2 ──────────────────────────────── */
+/* ── REGISTER STEP 2 ─────────────────────────────────── */
 async function registerVerify(){
   const email=document.getElementById("rEmail").value.trim();
   const code=document.getElementById("regOtp").value.trim().toUpperCase();
@@ -209,7 +271,7 @@ async function registerVerify(){
   }catch{showMsg("rMsg2","Connection error. Please try again.","err");btn.disabled=false;btn.textContent="Verify & Create Account";}
 }
 
-/* ── RESEND OTP ───────────────────────────────────── */
+/* ── RESEND OTP ──────────────────────────────────────── */
 async function resendOtp(){
   const name=document.getElementById("rName").value.trim();
   const email=document.getElementById("rEmail").value.trim();
@@ -223,7 +285,7 @@ async function resendOtp(){
   }catch{showMsg("rMsg2","Connection error.","err");}
 }
 
-/* ── FORGOT PASSWORD ──────────────────────────────── */
+/* ── FORGOT / RESET PASSWORD ─────────────────────────── */
 async function sendResetCode(){
   const email=document.getElementById("fEmail").value.trim();
   clearMsg("fMsg1");
@@ -258,14 +320,16 @@ async function resetPassword(){
       setTimeout(()=>{
         document.getElementById("fStep1").style.display="block";
         document.getElementById("fStep2").style.display="none";
-        document.getElementById("fEmail").value="";document.getElementById("resetCode").value="";
-        clearMsg("fMsg1");clearMsg("fMsg2");showPage("loginPage");
+        document.getElementById("fEmail").value="";
+        document.getElementById("resetCode").value="";
+        clearMsg("fMsg1");clearMsg("fMsg2");
+        showPage("loginPage");
       },1800);
     }else{showMsg("fMsg2",data.error||"Invalid code.","err");}
   }catch{showMsg("fMsg2","Connection error. Please try again.","err");}
 }
 
-/* ── LOGOUT ───────────────────────────────────────── */
+/* ── LOGOUT ──────────────────────────────────────────── */
 function logout(){
   S.clear();setStatus("ready","TAP TO SPEAK");
   ["transcriptBox","responseBox"].forEach(id=>{
@@ -274,104 +338,103 @@ function logout(){
   showPage("welcomePage");notify("Signed out successfully.");
 }
 
-/* ── SPEECH RECOGNITION ───────────────────────────── */
-let recognition=null,_busy=false;
-const SPEECH_LANG_MAP={
-  "1":"en-US","2":"hi-IN","3":"mr-IN","4":"ta-IN",
-  "5":"te-IN","6":"gu-IN","7":"bn-IN","8":"kn-IN"
-};
+/* ── SPEECH RECOGNITION ────────────────────────────────── */
+let recognition = null, _busy = false;
 
 (function initSR(){
-  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){console.warn("[SR] Not supported.");return;}
-  recognition=new SR();
-  recognition.continuous=false;
-  recognition.interimResults=false;
-  recognition.maxAlternatives=1;
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){ console.warn("[SR] Not supported."); return; }
+  recognition = new SR();
+  recognition.continuous     = false;
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+  recognition.lang = getLang(_fromCode).sr;  // ← FROM lang, not TO
 
-  recognition.onstart=()=>{_busy=true;setStatus("listening","LISTENING");};
+  recognition.onstart = () => { _busy=true; setStatus("listening","LISTENING"); };
 
-  recognition.onresult=event=>{
-    const text=event.results[0][0].transcript.trim();
-    console.log("[SR] Captured:",text);
-    document.getElementById("transcriptText").textContent=text;
+  recognition.onresult = event => {
+    const text = event.results[0][0].transcript.trim();
+    console.log("[SR] Heard:", text,
+      "| FROM:", getLang(_fromCode).name,
+      "→ TO:", getLang(_toCode).name);
+    document.getElementById("transcriptText").textContent = text;
     document.getElementById("transcriptBox").classList.remove("hidden");
     document.getElementById("responseBox").classList.add("hidden");
     sendVoice(text);
   };
 
-  recognition.onerror=e=>{
-    _busy=false;setStatus("ready","TAP TO SPEAK");
-    const map={
-      "no-speech":   "No speech detected. Please try again.",
-      "audio-capture":"Microphone not found. Check your device.",
-      "not-allowed": "Microphone access denied. Allow it in browser settings.",
-      "network":     "Network error during speech recognition.",
+  recognition.onerror = e => {
+    _busy=false; setStatus("ready","TAP TO SPEAK");
+    const map = {
+      "no-speech":      "No speech detected. Please try again.",
+      "audio-capture":  "Microphone not found. Check your device.",
+      "not-allowed":    "Microphone access denied. Allow it in browser settings.",
+      "network":        "Network error during speech recognition.",
     };
-    notify(map[e.error]||"Speech error: "+e.error);
+    notify(map[e.error] || "Speech error: "+e.error);
   };
 
-  recognition.onend=()=>{
-    _busy=false;
-    const orb=document.getElementById("orb");
-    if(orb&&orb.className.includes("listening"))
+  recognition.onend = () => {
+    _busy = false;
+    const orb = document.getElementById("orb");
+    if(orb && orb.className.includes("listening"))
       setStatus("processing","PROCESSING");
   };
 })();
 
 function startListening(){
-  if(_busy)return;
-  const orb=document.getElementById("orb");if(!orb)return;
-  if(orb.className.includes("listening")||orb.className.includes("processing")||orb.className.includes("speaking"))return;
-  if(!recognition){notify("Speech recognition not supported. Please use Chrome or Edge.");return;}
-  const code=document.getElementById("selLang").value||"1";
-  recognition.lang=SPEECH_LANG_MAP[code]||"hi-IN";
-  console.log("[SR] Listening in:",recognition.lang);
-  try{recognition.start();}catch(e){setStatus("ready","TAP TO SPEAK");}
+  if(_busy) return;
+  const orb = document.getElementById("orb"); if(!orb) return;
+  if(orb.className.includes("listening") ||
+     orb.className.includes("processing") ||
+     orb.className.includes("speaking")) return;
+  if(!recognition){ notify("Speech recognition not supported. Use Chrome or Edge."); return; }
+
+  // Always re-sync FROM lang before starting — ensures any dropdown change is applied
+  recognition.lang = getLang(_fromCode).sr;
+  console.log("[SR] Start | mic lang:", recognition.lang, "| translate to code:", _toCode);
+  try{ recognition.start(); }catch(e){ setStatus("ready","TAP TO SPEAK"); }
 }
 
-/* ── SEND TO BACKEND ──────────────────────────────── */
+/* ── SEND TO BACKEND ───────────────────────────────────── */
 async function sendVoice(text){
-  const lang=document.getElementById("selLang").value||"1";
-  const voice=S.voice;
-  const username=S.username;
   setStatus("processing","TRANSLATING");
+  const voice    = S.voice;
+  const username = S.username;
+  const toL      = getLang(_toCode);
 
   try{
-    const res=await fetch(API+"/voice",{
+    const res = await fetch(API+"/voice",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({text,language:lang,voice,username})
+      body:JSON.stringify({ text, language: _toCode, voice, username })
     });
 
     if(!res.ok){
-      let err="Server error ("+res.status+").";
-      try{const d=await res.json();if(d.error)err=d.error;}catch{}
-      setStatus("ready","TAP TO SPEAK");notify(err);return;
+      let err = "Server error ("+res.status+").";
+      try{ const d=await res.json(); if(d.error)err=d.error; }catch{}
+      setStatus("ready","TAP TO SPEAK"); notify(err); return;
     }
 
-    const data=await res.json();
+    const data = await res.json();
     if(!data.success){
       setStatus("ready","TAP TO SPEAK");
-      notify(data.error||"Something went wrong.");return;
+      notify(data.error||"Something went wrong."); return;
     }
 
-    // Show translation
-    document.getElementById("responseText").textContent=data.text;
-    document.getElementById("responseMeta").textContent=
-      "Speaking in "+( data.lang_name||"selected language");
+    document.getElementById("responseText").textContent = data.text;
+    document.getElementById("responseMeta").textContent =
+      "Speaking in " + (data.lang_name || toL.name);
     document.getElementById("responseBox").classList.remove("hidden");
-
     setStatus("speaking","SPEAKING");
 
-    // Play audio
-    const audio=new Audio(data.audio);
-    audio.oncanplaythrough=()=>audio.play().catch(()=>{
+    const audio = new Audio(data.audio);
+    audio.oncanplaythrough = () => audio.play().catch(()=>{
       setStatus("ready","TAP TO SPEAK");
-      notify("Translation complete. Audio blocked by browser — click to enable autoplay.");
+      notify("Translation complete. Tap play — browser blocked autoplay.");
     });
-    audio.onended =()=>setStatus("ready","TAP TO SPEAK");
-    audio.onerror =()=>{setStatus("ready","TAP TO SPEAK");notify("Audio playback failed.");};
+    audio.onended = () => setStatus("ready","TAP TO SPEAK");
+    audio.onerror = () => { setStatus("ready","TAP TO SPEAK"); notify("Audio playback failed."); };
     audio.load();
 
   }catch(e){
@@ -381,8 +444,12 @@ async function sendVoice(text){
   }
 }
 
-/* ── INIT ─────────────────────────────────────────── */
-window.addEventListener("load",()=>{
+/* ── INIT ────────────────────────────────────────────── */
+window.addEventListener("load", () => {
   loadVoices();
-  showPage(S.ok?"appPage":"welcomePage");
+  // Set initial button labels
+  document.getElementById("fromName").textContent = getLang(_fromCode).name;
+  document.getElementById("toName").textContent   = getLang(_toCode).name;
+  _updateBadge();
+  showPage(S.ok ? "appPage" : "welcomePage");
 });
