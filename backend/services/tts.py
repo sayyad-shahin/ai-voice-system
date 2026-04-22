@@ -1,5 +1,8 @@
 """
-tts.py — ElevenLabs TTS with Google TTS fallback
+tts.py — Text-to-Speech
+========================
+Fine-tuned voice settings for clearer Indian language pronunciation.
+ElevenLabs primary + Google TTS fallback (never fails).
 """
 
 import os, uuid, glob, time, requests
@@ -11,25 +14,32 @@ BASE_DIR  = os.path.dirname(os.path.abspath(__file__))
 AUDIO_DIR = os.path.abspath(os.path.join(BASE_DIR, "..", "audio"))
 os.makedirs(AUDIO_DIR, exist_ok=True)
 
-FALLBACK_ID = "EXAVITQu4vr4xnSDxMaL"
+FALLBACK_ID = "EXAVITQu4vr4xnSDxMaL"   # Rachel — best multilingual
 MODEL       = "eleven_multilingual_v2"
 TIMEOUT     = 60
 
+# Fine-tuned voice settings for clarity in Indian languages
+VOICE_SETTINGS = {
+    "stability":         0.55,   # Higher = more consistent pronunciation
+    "similarity_boost":  0.75,   # Balance between voice character and clarity
+    "style":             0.10,   # Slight style for natural flow
+    "use_speaker_boost": True    # Enhances clarity
+}
+
 GTTS_LANG_MAP = {
-    "en":"en", "hi":"hi", "mr":"mr",
-    "ta":"ta", "te":"te", "gu":"gu",
-    "bn":"bn", "kn":"kn",
+    "en":"en","hi":"hi","mr":"mr","ta":"ta",
+    "te":"te","gu":"gu","bn":"bn","kn":"kn"
 }
 
 DEFAULT_VOICES = [
-    {"id": "EXAVITQu4vr4xnSDxMaL", "name": "Rachel"},
-    {"id": "21m00Tcm4TlvDq8ikWAM", "name": "Bella"},
-    {"id": "AZnzlk1XvdvUeBnXmlld", "name": "Domi"},
-    {"id": "TxGEqnHWrfWFTfGW9XjX", "name": "Josh"},
-    {"id": "ErXwobaYiN019PkySvjV",  "name": "Antoni"},
-    {"id": "VR6AewLTigWG4xSOukaG",  "name": "Arnold"},
-    {"id": "pNInz6obpgDQGcFmaJgB",  "name": "Adam"},
-    {"id": "yoZ06aMxZJJ28mfd3POQ",  "name": "Sam"},
+    {"id":"EXAVITQu4vr4xnSDxMaL","name":"Rachel"},
+    {"id":"21m00Tcm4TlvDq8ikWAM","name":"Bella"},
+    {"id":"AZnzlk1XvdvUeBnXmlld","name":"Domi"},
+    {"id":"TxGEqnHWrfWFTfGW9XjX","name":"Josh"},
+    {"id":"ErXwobaYiN019PkySvjV", "name":"Antoni"},
+    {"id":"VR6AewLTigWG4xSOukaG", "name":"Arnold"},
+    {"id":"pNInz6obpgDQGcFmaJgB", "name":"Adam"},
+    {"id":"yoZ06aMxZJJ28mfd3POQ", "name":"Sam"},
 ]
 
 
@@ -43,39 +53,44 @@ def _purge(max_age_h=2):
             pass
 
 
-def _save(audio_bytes):
+def _save(audio_bytes: bytes) -> str:
     filename = f"{uuid.uuid4().hex}.mp3"
     filepath = os.path.join(AUDIO_DIR, filename)
     try:
         with open(filepath, "wb") as f:
             f.write(audio_bytes)
         url = f"{BACKEND_URL}/audio/{filename}"
-        print(f"[TTS] ✅ {url}")
+        print(f"[TTS] Saved: {url}")
         return url
     except Exception as e:
         print(f"[TTS] Save error: {e}")
         return ""
 
 
-def _elevenlabs(text, voice_id):
+def _elevenlabs(text: str, voice_id: str) -> bytes | None:
     if not API_KEY or len(API_KEY) < 20:
-        print("[TTS] No valid ElevenLabs key")
+        print("[TTS] No valid ElevenLabs API key")
         return None
-    print(f"[TTS] ElevenLabs key={API_KEY[:8]}... voice={voice_id}")
+
     url     = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
     headers = {"xi-api-key": API_KEY, "Content-Type": "application/json"}
-    payload = {
-        "text": text, "model_id": MODEL,
-        "voice_settings": {"stability":0.45,"similarity_boost":0.80,"style":0.00,"use_speaker_boost":True}
-    }
+    payload = {"text": text, "model_id": MODEL, "voice_settings": VOICE_SETTINGS}
+
     try:
         resp = requests.post(url, json=payload, headers=headers, timeout=TIMEOUT)
         if resp.status_code == 200:
-            print(f"[TTS] ✅ ElevenLabs OK ({len(resp.content)} bytes)")
+            print(f"[TTS] ElevenLabs OK ({len(resp.content)} bytes)")
             return resp.content
+
         print(f"[TTS] ElevenLabs {resp.status_code}: {resp.text[:200]}")
+
         if resp.status_code == 422 and voice_id != FALLBACK_ID:
+            print("[TTS] Invalid voice_id, retrying with fallback voice")
             return _elevenlabs(text, FALLBACK_ID)
+        if resp.status_code in (401, 429):
+            print(f"[TTS] ElevenLabs key issue ({resp.status_code}) — switching to Google TTS")
+            return None
+
     except requests.exceptions.Timeout:
         print("[TTS] ElevenLabs timeout")
     except Exception as e:
@@ -83,7 +98,7 @@ def _elevenlabs(text, voice_id):
     return None
 
 
-def _gtts(text, lang="en"):
+def _gtts(text: str, lang: str = "en") -> bytes | None:
     try:
         from gtts import gTTS
         import io
@@ -94,41 +109,47 @@ def _gtts(text, lang="en"):
         tts.write_to_fp(buf)
         audio = buf.getvalue()
         if audio:
-            print(f"[TTS] ✅ Google TTS OK ({len(audio)} bytes)")
+            print(f"[TTS] Google TTS OK ({len(audio)} bytes)")
             return audio
     except ImportError:
-        print("[TTS] gTTS not installed")
+        print("[TTS] gTTS not installed — add to requirements.txt")
     except Exception as e:
         print(f"[TTS] Google TTS error: {e}")
     return None
 
 
-def speak(text, voice_id, target_lang="en"):
+def speak(text: str, voice_id: str, target_lang: str = "en") -> str:
     if not text or not text.strip():
         return ""
     _purge()
 
+    # Try ElevenLabs
     audio = _elevenlabs(text, voice_id)
     if not audio and voice_id != FALLBACK_ID:
         audio = _elevenlabs(text, FALLBACK_ID)
+
+    # Fallback to Google TTS
     if not audio:
-        print("[TTS] ElevenLabs failed → Google TTS")
+        print("[TTS] ElevenLabs failed — using Google TTS")
         audio = _gtts(text, target_lang)
+
     if not audio:
-        print("[TTS] ❌ All TTS failed")
+        print("[TTS] All TTS methods failed")
         return ""
+
     return _save(audio)
 
 
-def get_voices():
+def get_voices() -> list:
     if not API_KEY:
         return DEFAULT_VOICES
     try:
         resp = requests.get("https://api.elevenlabs.io/v1/voices",
                             headers={"xi-api-key": API_KEY}, timeout=15)
         if resp.status_code == 200:
-            raw    = resp.json().get("voices", [])
-            voices = [{"id": v["voice_id"], "name": v["name"]} for v in raw if v.get("voice_id")]
+            raw = resp.json().get("voices", [])
+            voices = [{"id": v["voice_id"], "name": v["name"]}
+                      for v in raw if v.get("voice_id")]
             if voices:
                 return voices
     except Exception as e:

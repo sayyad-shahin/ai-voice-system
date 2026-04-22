@@ -1,20 +1,15 @@
 """Run once: python init_db.py"""
 import sqlite3, os
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH  = os.path.join(BASE_DIR, "database", "voiceai.db")
 os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-
 conn = sqlite3.connect(DB_PATH)
 conn.executescript("""
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        username TEXT UNIQUE NOT NULL,
-        password TEXT NOT NULL,
-        email TEXT UNIQUE NOT NULL,
-        created_at TEXT DEFAULT (datetime('now')),
-        last_login TEXT
+        name TEXT NOT NULL, username TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL, email TEXT UNIQUE NOT NULL,
+        created_at TEXT DEFAULT (datetime('now')), last_login TEXT
     );
     CREATE TABLE IF NOT EXISTS login_activity (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -29,6 +24,5 @@ conn.executescript("""
         created_at TEXT DEFAULT (datetime('now'))
     );
 """)
-conn.commit()
-conn.close()
-print("Database ready at:", DB_PATH)
+conn.commit(); conn.close()
+print("Database ready:", DB_PATH)

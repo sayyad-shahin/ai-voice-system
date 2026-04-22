@@ -5,55 +5,64 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>VoiceAI — Speak Any Language</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&family=JetBrains+Mono:wght@600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<!-- ══════════ WELCOME ══════════ -->
+<!-- WELCOME -->
 <div id="welcomePage" class="page active">
   <div class="ambient"><div class="amb a1"></div><div class="amb a2"></div><div class="amb a3"></div></div>
   <div class="welcome-wrap">
-    <div class="logo-ring-wrap">
-      <div class="lr1"></div><div class="lr2"></div><div class="lcore"></div>
+    <div class="logo-mark">
+      <div class="lm-ring lm-r1"></div>
+      <div class="lm-ring lm-r2"></div>
+      <div class="lm-core"></div>
     </div>
     <h1 class="welcome-title">Voice<span class="hl">AI</span></h1>
     <p class="welcome-sub">
-      Speak in any language — hear it back in any other.<br>
-      Pick your input and output language. Just speak naturally.
+      Speak in any language. Hear it back in any other.<br>
+      Powered by AI — instant, accurate, natural.
     </p>
     <div class="pill-row">
-      <span class="pill">English</span><span class="pill">हिंदी</span>
-      <span class="pill">मराठी</span><span class="pill">தமிழ்</span>
-      <span class="pill">తెలుగు</span><span class="pill">ગુજરાતી</span>
-      <span class="pill">বাংলা</span><span class="pill">ಕನ್ನಡ</span>
+      <span class="pill">English</span><span class="pill">Hindi</span>
+      <span class="pill">Marathi</span><span class="pill">Tamil</span>
+      <span class="pill">Telugu</span><span class="pill">Gujarati</span>
+      <span class="pill">Bengali</span><span class="pill">Kannada</span>
     </div>
     <button class="btn btn-main" onclick="showPage('loginPage')">Get Started</button>
     <p class="sub-link">New here? <a href="#" onclick="showPage('registerPage')">Create a free account</a></p>
   </div>
 </div>
 
-<!-- ══════════ LOGIN ══════════ -->
+<!-- LOGIN -->
 <div id="loginPage" class="page">
   <div class="ambient"><div class="amb a1"></div><div class="amb a2"></div></div>
   <div class="card">
     <button class="back-btn" onclick="showPage('welcomePage')">← Back</button>
     <div class="card-head">
-      <div class="card-icon">🎙️</div>
+      <div class="card-glyph">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <circle cx="16" cy="16" r="15" stroke="currentColor" stroke-width="1.5" opacity=".3"/>
+          <rect x="12" y="8" width="8" height="12" rx="4" fill="currentColor" opacity=".9"/>
+          <path d="M8 18c0 4.4 3.6 8 8 8s8-3.6 8-8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none" opacity=".9"/>
+          <line x1="16" y1="26" x2="16" y2="30" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".9"/>
+        </svg>
+      </div>
       <h2>Welcome back</h2>
       <p>Sign in to your VoiceAI account</p>
     </div>
     <div class="field">
       <label>Username</label>
-      <input id="lUser" type="text" placeholder="Your username"
-             autocomplete="username" onkeydown="if(event.key==='Enter')login()">
+      <input id="lUser" type="text" placeholder="Your username" autocomplete="username" onkeydown="if(event.key==='Enter')login()">
     </div>
     <div class="field">
       <label>Password</label>
       <div class="pw-row">
-        <input id="lPass" type="password" placeholder="Your password"
-               autocomplete="current-password" onkeydown="if(event.key==='Enter')login()">
-        <button class="eye-btn" type="button" onclick="togglePw('lPass',this)">👁</button>
+        <input id="lPass" type="password" placeholder="Your password" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()">
+        <button class="eye-btn" type="button" onclick="togglePw('lPass',this)" aria-label="Toggle password">
+          <svg id="eyeIcon_lPass" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
       </div>
     </div>
     <div class="field">
@@ -69,89 +78,110 @@
   </div>
 </div>
 
-<!-- ══════════ REGISTER ══════════ -->
+<!-- REGISTER -->
 <div id="registerPage" class="page">
   <div class="ambient"><div class="amb a1"></div><div class="amb a2"></div></div>
   <div class="card">
     <button class="back-btn" onclick="showPage('loginPage')">← Back</button>
     <div class="card-head">
-      <div class="card-icon">✨</div>
+      <div class="card-glyph">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <circle cx="16" cy="16" r="15" stroke="currentColor" stroke-width="1.5" opacity=".3"/>
+          <circle cx="16" cy="13" r="4" fill="currentColor" opacity=".9"/>
+          <path d="M8 26c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none" opacity=".9"/>
+          <line x1="24" y1="8" x2="24" y2="14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" opacity=".9"/>
+          <line x1="21" y1="11" x2="27" y2="11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" opacity=".9"/>
+        </svg>
+      </div>
       <h2>Create account</h2>
       <p>Join VoiceAI — completely free</p>
     </div>
+
+    <!-- Step 1 -->
     <div id="regStep1">
-      <div class="field"><label>Full Name</label>
-        <input id="rName" type="text" placeholder="Your full name"></div>
-      <div class="field"><label>Email</label>
-        <input id="rEmail" type="email" placeholder="your@email.com"></div>
-      <div class="field"><label>Username</label>
-        <input id="rUser" type="text" placeholder="Min. 3 chars (letters, numbers, _ .)"></div>
+      <div class="field"><label>Full Name</label><input id="rName" type="text" placeholder="Your full name"></div>
+      <div class="field"><label>Email</label><input id="rEmail" type="email" placeholder="your@email.com"></div>
+      <div class="field"><label>Username</label><input id="rUser" type="text" placeholder="Min. 3 characters"></div>
       <div class="field"><label>Password</label>
         <div class="pw-row">
           <input id="rPass" type="password" placeholder="Minimum 6 characters">
-          <button class="eye-btn" type="button" onclick="togglePw('rPass',this)">👁</button>
+          <button class="eye-btn" type="button" onclick="togglePw('rPass',this)" aria-label="Toggle">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
         </div></div>
       <div class="field"><label>Confirm Password</label>
         <div class="pw-row">
           <input id="rConf" type="password" placeholder="Repeat your password">
-          <button class="eye-btn" type="button" onclick="togglePw('rConf',this)">👁</button>
+          <button class="eye-btn" type="button" onclick="togglePw('rConf',this)" aria-label="Toggle">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
         </div></div>
       <div id="rMsg1" class="msg"></div>
       <button class="btn btn-main full" id="rBtn1" onclick="registerRequest()">Send Verification Code</button>
     </div>
+
+    <!-- Step 2 -->
     <div id="regStep2" style="display:none">
       <div class="code-hint">
         A 6-character code was sent to your email.<br>
-        Check <strong>inbox and spam</strong>. Expires in 10 min.
+        Check inbox and spam. Expires in 10 minutes.
       </div>
       <div class="field"><label>Verification Code</label>
-        <input id="regOtp" type="text" placeholder="ABC123" maxlength="6"
-               style="text-transform:uppercase;letter-spacing:10px;font-size:26px;
-                      font-weight:800;text-align:center;font-family:'JetBrains Mono',monospace;"
-               onkeydown="if(event.key==='Enter')registerVerify()">
+        <input id="regOtp" type="text" placeholder="ABC123" maxlength="6" class="code-input" onkeydown="if(event.key==='Enter')registerVerify()">
       </div>
       <div id="rMsg2" class="msg"></div>
       <button class="btn btn-main full" id="rBtn2" onclick="registerVerify()">Verify &amp; Create Account</button>
       <button class="btn btn-ghost full" style="margin-top:10px" onclick="resendOtp()">Resend Code</button>
     </div>
+
     <p class="sub-link" style="text-align:center;margin-top:16px;">
       Already have an account? <a href="#" onclick="showPage('loginPage')">Sign in</a>
     </p>
   </div>
 </div>
 
-<!-- ══════════ FORGOT PASSWORD ══════════ -->
+<!-- FORGOT PASSWORD -->
 <div id="forgotPage" class="page">
   <div class="ambient"><div class="amb a1"></div><div class="amb a2"></div></div>
   <div class="card">
     <button class="back-btn" onclick="showPage('loginPage')">← Back</button>
     <div class="card-head">
-      <div class="card-icon">🔐</div>
+      <div class="card-glyph">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <circle cx="16" cy="16" r="15" stroke="currentColor" stroke-width="1.5" opacity=".3"/>
+          <rect x="9" y="14" width="14" height="11" rx="2" stroke="currentColor" stroke-width="1.5" fill="none" opacity=".9"/>
+          <path d="M11 14v-3a5 5 0 0 1 10 0v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none" opacity=".9"/>
+          <circle cx="16" cy="20" r="1.5" fill="currentColor" opacity=".9"/>
+        </svg>
+      </div>
       <h2>Reset Password</h2>
       <p>Enter your email to receive a reset code</p>
     </div>
     <div id="fStep1">
       <div class="field"><label>Email Address</label>
-        <input id="fEmail" type="email" placeholder="your@email.com"
-               onkeydown="if(event.key==='Enter')sendResetCode()"></div>
+        <input id="fEmail" type="email" placeholder="your@email.com" onkeydown="if(event.key==='Enter')sendResetCode()">
+      </div>
       <div id="fMsg1" class="msg"></div>
       <button class="btn btn-main full" onclick="sendResetCode()">Send Reset Code</button>
     </div>
     <div id="fStep2" style="display:none">
-      <div class="code-hint">A 6-character reset code was sent to your email. Expires in 10 min.</div>
+      <div class="code-hint">A 6-character code was sent to your email. Expires in 10 minutes.</div>
       <div class="field"><label>Reset Code</label>
-        <input id="resetCode" type="text" placeholder="ABC123" maxlength="6"
-               style="text-transform:uppercase;letter-spacing:10px;font-size:26px;
-                      font-weight:800;text-align:center;font-family:'JetBrains Mono',monospace;"></div>
+        <input id="resetCode" type="text" placeholder="ABC123" maxlength="6" class="code-input">
+      </div>
       <div class="field"><label>New Password</label>
         <div class="pw-row">
           <input id="newPw" type="password" placeholder="Minimum 6 characters">
-          <button class="eye-btn" type="button" onclick="togglePw('newPw',this)">👁</button>
+          <button class="eye-btn" type="button" onclick="togglePw('newPw',this)" aria-label="Toggle">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
         </div></div>
       <div class="field"><label>Confirm New Password</label>
         <div class="pw-row">
           <input id="newPwConf" type="password" placeholder="Repeat new password">
-          <button class="eye-btn" type="button" onclick="togglePw('newPwConf',this)">👁</button>
+          <button class="eye-btn" type="button" onclick="togglePw('newPwConf',this)" aria-label="Toggle">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
         </div></div>
       <div id="fMsg2" class="msg"></div>
       <button class="btn btn-main full" onclick="resetPassword()">Reset Password</button>
@@ -159,54 +189,68 @@
   </div>
 </div>
 
-<!-- ══════════ APP ══════════ -->
+<!-- APP -->
 <div id="appPage" class="page">
   <div class="ambient"><div class="amb a1"></div><div class="amb a2"></div><div class="amb a3"></div></div>
 
-  <!-- TOP BAR: FROM → TO dual selectors + Sign Out -->
   <div class="topbar">
     <div class="brand">Voice<span class="hl">AI</span></div>
     <div class="topbar-right">
-
-      <!-- FROM language (what YOU speak → sets mic recognition lang) -->
-      <div class="lang-wrap" id="fromWrap">
-        <button class="lang-btn from-btn" id="fromBtn" onclick="toggleFromMenu()">
-          <span class="lang-dir-tag">I speak</span>
-          <span id="fromLabel">🇮🇳 Hindi</span>
-          <span class="caret">▾</span>
+      <div class="lang-wrap">
+        <button class="lang-btn" id="langBtn" onclick="toggleLangMenu()">
+          <span id="langLabel">English</span>
+          <svg class="caret-icon" width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
         </button>
-        <div id="fromMenu" class="lang-menu hidden"></div>
+        <div id="langMenu" class="lang-menu hidden">
+          <div class="lang-opt active" data-label="English"  onclick="selectLang('1','English')">English</div>
+          <div class="lang-opt"        data-label="Hindi"    onclick="selectLang('2','Hindi')">Hindi — हिंदी</div>
+          <div class="lang-opt"        data-label="Marathi"  onclick="selectLang('3','Marathi')">Marathi — मराठी</div>
+          <div class="lang-opt"        data-label="Tamil"    onclick="selectLang('4','Tamil')">Tamil — தமிழ்</div>
+          <div class="lang-opt"        data-label="Telugu"   onclick="selectLang('5','Telugu')">Telugu — తెలుగు</div>
+          <div class="lang-opt"        data-label="Gujarati" onclick="selectLang('6','Gujarati')">Gujarati — ગુજરાતી</div>
+          <div class="lang-opt"        data-label="Bengali"  onclick="selectLang('7','Bengali')">Bengali — বাংলা</div>
+          <div class="lang-opt"        data-label="Kannada"  onclick="selectLang('8','Kannada')">Kannada — ಕನ್ನಡ</div>
+        </div>
       </div>
-
-      <!-- Arrow divider -->
-      <div class="lang-arrow">→</div>
-
-      <!-- TO language (translation target → sent to backend) -->
-      <div class="lang-wrap" id="toWrap">
-        <button class="lang-btn to-btn" id="toBtn" onclick="toggleToMenu()">
-          <span class="lang-dir-tag">Translate to</span>
-          <span id="toLabel">🇺🇸 English</span>
-          <span class="caret">▾</span>
-        </button>
-        <div id="toMenu" class="lang-menu hidden"></div>
-      </div>
-
       <button class="btn btn-ghost" onclick="logout()">Sign Out</button>
     </div>
   </div>
 
   <div class="voice-view">
     <div class="voice-center">
-      <div class="lang-flow-badge" id="langFlowBadge">
-         Speak in <strong id="badgeFrom">Hindi</strong> → hear it in <strong id="badgeTo">English</strong>
-      </div>
 
+      <div class="auto-label">Auto-detects input language</div>
+
+      <!-- Orb -->
       <div class="orb-shell">
         <div class="rings-wrap" id="rings">
-          <div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div>
+          <div class="ring r1"></div>
+          <div class="ring r2"></div>
+          <div class="ring r3"></div>
         </div>
-        <div class="orb" id="orb" onclick="startListening()">
-          <div class="orb-inner"><div class="orb-icon" id="orbIcon">🎙️</div></div>
+        <div class="orb" id="orb" onclick="startListening()" role="button" aria-label="Tap to speak">
+          <div class="orb-inner">
+            <!-- SVG mic icon — no emoji -->
+            <svg id="orbSvg" class="orb-svg" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="18" y="6" width="12" height="22" rx="6" fill="white" opacity=".95"/>
+              <path d="M10 24c0 7.7 6.3 14 14 14s14-6.3 14-14" stroke="white" stroke-width="2.5" stroke-linecap="round" fill="none" opacity=".95"/>
+              <line x1="24" y1="38" x2="24" y2="44" stroke="white" stroke-width="2.5" stroke-linecap="round" opacity=".95"/>
+            </svg>
+            <!-- Processing spinner (hidden by default) -->
+            <svg id="orbSpinner" class="orb-spinner hidden" viewBox="0 0 48 48" fill="none">
+              <circle cx="24" cy="24" r="18" stroke="white" stroke-width="3" stroke-dasharray="28 85" stroke-linecap="round" opacity=".9"/>
+            </svg>
+            <!-- Speaking wave (hidden by default) -->
+            <svg id="orbWave" class="orb-wave hidden" viewBox="0 0 48 48" fill="none">
+              <rect x="8"  y="18" width="4" height="12" rx="2" fill="white" opacity=".9"/>
+              <rect x="16" y="12" width="4" height="24" rx="2" fill="white" opacity=".9"/>
+              <rect x="24" y="8"  width="4" height="32" rx="2" fill="white" opacity=".9"/>
+              <rect x="32" y="12" width="4" height="24" rx="2" fill="white" opacity=".9"/>
+              <rect x="40" y="18" width="4" height="12" rx="2" fill="white" opacity=".9"  transform="translate(-4,0)"/>
+            </svg>
+          </div>
         </div>
       </div>
 
@@ -216,32 +260,22 @@
         <div class="box-lbl">You said</div>
         <div class="box-txt" id="transcriptText"></div>
       </div>
+
       <div class="info-box resp-box hidden" id="responseBox">
         <div class="box-lbl">Translation</div>
         <div class="box-txt" id="responseText"></div>
         <div class="box-meta" id="responseMeta"></div>
       </div>
+
     </div>
   </div>
+
+  <input type="hidden" id="selLang" value="1">
 </div>
 
+<!-- TOAST -->
 <div class="toast hidden" id="toast"></div>
-<script src="app.js"></script>
-<script>
-  // Update the badge text when FROM/TO change — hook into the toggle functions
-  const _origToggleFrom = toggleFromMenu;
-  const _origToggleTo   = toggleToMenu;
 
-  // Patch: update badge whenever a lang is selected
-  // (badge update is done inline inside app.js via getLang)
-  function updateBadge(){
-    const bf=document.getElementById("badgeFrom");
-    const bt=document.getElementById("badgeTo");
-    if(bf) bf.textContent=getLang(_fromCode).label.replace(/^\S+\s*/,"");
-    if(bt) bt.textContent=getLang(_toCode).label.replace(/^\S+\s*/,"");
-  }
-  // Poll badge every 400ms to stay in sync (lightweight, clean)
-  setInterval(updateBadge, 400);
-</script>
+<script src="app.js"></script>
 </body>
 </html>

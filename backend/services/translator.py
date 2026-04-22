@@ -1,3 +1,14 @@
+"""
+translator.py — Fine-tuned translation
+========================================
+Key improvements for accuracy:
+- source="auto" always (Google detects correctly)
+- Sentence-boundary splitting preserves meaning
+- Parallel chunks for speed on long text
+- Two-hop fallback (via English) for rare failures
+- Cleans up extra whitespace in output
+"""
+
 import re, time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from deep_translator import GoogleTranslator
@@ -6,14 +17,22 @@ _MAX_CHARS   = 4800
 _MAX_WORKERS = 4
 _RETRY_WAIT  = 0.5
 
-# Languages that benefit from forced two-hop routing via English
-_TWO_HOP_LANGS = {"mr", "ta", "te", "gu", "bn", "kn", "hi"}
+# Languages that need special handling for script detection
+_INDIC = {"hi","mr","ta","te","gu","bn","kn"}
 
 
-def _split(text):
+def _clean(text: str) -> str:
+    """Remove extra whitespace and normalize punctuation spacing."""
+    text = re.sub(r' +', ' ', text)
+    text = re.sub(r' ([.,!?;:])', r'\1', text)
+    return text.strip()
+
+
+def _split(text: str) -> list:
     if len(text) <= _MAX_CHARS:
         return [text]
-    parts = re.split(r'(?<=[.!?।\?\!])\s+', text)
+    # Split on sentence boundaries
+    parts = re.split(r'(?<=[.!?।\?\!।])\s+', text)
     chunks, cur = [], ""
     for part in parts:
         if len(cur) + len(part) + 1 > _MAX_CHARS:
@@ -25,81 +44,61 @@ def _split(text):
     return chunks or [text]
 
 
-def _google(text, source, target, retries=2):
-    """Single translation call with retry."""
+def _translate_one(chunk: str, target: str, retries: int = 2) -> str:
     for attempt in range(retries + 1):
         try:
-            result = GoogleTranslator(source=source, target=target).translate(text)
+            result = GoogleTranslator(source="auto", target=target).translate(chunk)
             if result and result.strip():
-                return result.strip()
+                return _clean(result)
         except Exception as e:
-            print(f"[Translator] {source}→{target} attempt {attempt+1}: {e}")
+            print(f"[Translator] attempt {attempt+1} error: {e}")
             if attempt < retries:
                 time.sleep(_RETRY_WAIT * (attempt + 1))
-    return None
+
+    # Two-hop fallback via English for Indic languages
+    if target in _INDIC:
+        try:
+            print("[Translator] Trying two-hop fallback via English…")
+            en = GoogleTranslator(source="auto", target="en").translate(chunk)
+            if en and en.strip():
+                final = GoogleTranslator(source="en", target=target).translate(en.strip())
+                if final and final.strip():
+                    return _clean(final)
+        except Exception as e:
+            print(f"[Translator] Two-hop failed: {e}")
+
+    # Return original text if all attempts fail
+    return chunk
 
 
-def _translate_one(chunk, target):
+def translate(text: str, target_lang: str) -> str:
     """
-    Translate one chunk to target language.
-
-    Strategy:
-      1. If target is English  → direct auto→en
-      2. If target is Indian   → two-hop: auto→en → en→target
-         (most reliable for Hindi/Marathi/Tamil etc.)
-      3. Final safety net      → direct auto→target
+    Translate text to target_lang.
+    Auto-detects source language.
+    Handles any length via parallel chunks.
     """
-    # ── Step 1: to English first (universal pivot) ────────────────────
-    en_text = _google(chunk, "auto", "en")
-
-    if not en_text:
-        # Could not get English — fall back to direct translation
-        print(f"[Translator] English pivot failed, trying direct auto→{target}")
-        result = _google(chunk, "auto", target)
-        return result if result else chunk
-
-    # ── Step 2: English is the target — we're done ────────────────────
-    if target == "en":
-        return en_text
-
-    # ── Step 3: English → target language ────────────────────────────
-    final = _google(en_text, "en", target)
-    if final:
-        return final
-
-    # ── Step 4: Last resort — direct auto → target ────────────────────
-    print(f"[Translator] en→{target} failed, trying direct auto→{target}")
-    result = _google(chunk, "auto", target)
-    return result if result else chunk
-
-
-def translate(text, target_lang):
-    """Translate text (any language) to target_lang using auto-detect."""
     if not text or not text.strip():
         return text
+
     text   = text.strip()
     chunks = _split(text)
 
-    print(f"[Translator] Translating {len(chunks)} chunk(s) → {target_lang}")
-
     if len(chunks) == 1:
         result = _translate_one(chunks[0], target_lang)
-        print(f"[Translator] Input:  '{chunks[0][:80]}'")
-        print(f"[Translator] Output: '{result[:80]}'")
+        print(f"[Translator] '{text[:50]}' → '{result[:50]}' ({target_lang})")
         return result
 
+    # Parallel translation for long text
     results = {}
     with ThreadPoolExecutor(max_workers=_MAX_WORKERS) as pool:
-        future_map = {
-            pool.submit(_translate_one, chunk, target_lang): idx
-            for idx, chunk in enumerate(chunks)
-        }
-        for future in as_completed(future_map):
-            idx = future_map[future]
+        futures = {pool.submit(_translate_one, chunk, target_lang): i
+                   for i, chunk in enumerate(chunks)}
+        for future in as_completed(futures):
+            i = futures[future]
             try:
-                results[idx] = future.result()
+                results[i] = future.result()
             except Exception as e:
-                print(f"[Translator] chunk {idx} error: {e}")
-                results[idx] = chunks[idx]
+                print(f"[Translator] chunk {i} error: {e}")
+                results[i] = chunks[i]
 
     return " ".join(results[i] for i in range(len(chunks)))
